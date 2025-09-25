@@ -229,8 +229,8 @@ export const useCart = () => {
         description: `${item.product_name} has been added to your cart`
       });
       
-      // Navigate to order completion page
-      navigate('/order-completion');
+      // Navigate to upsell page first
+      navigate('/upsell');
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);

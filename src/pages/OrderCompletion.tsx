@@ -16,6 +16,7 @@ import { z } from 'zod';
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
   lastName: z.string().min(1, "Last name is required").max(50, "Last name must be less than 50 characters"),
+  businessName: z.string().min(1, "Business name is required").max(100, "Business name must be less than 100 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^\d{10,}$/, "Phone number must contain only digits"),
   address: z.string().min(1, "Address is required").max(100, "Address must be less than 100 characters"),
@@ -64,30 +65,6 @@ const AREA_CODES = [
   '980', '984', '985', '989'
 ];
 
-const RECOMMENDATIONS = [
-  {
-    category: 'internet',
-    name: 'Business Internet Pro',
-    price: 79.99,
-    speed: '500 Mbps',
-    icon: Wifi,
-    features: ['High-speed fiber', 'Static IP included', '24/7 support']
-  },
-  {
-    category: 'phone',
-    name: 'Business Phone System',
-    price: 29.99,
-    icon: Phone,
-    features: ['Unlimited calling', 'Voicemail to email', 'Auto attendant']
-  },
-  {
-    category: 'tv',
-    name: 'Business TV Premium',
-    price: 49.99,
-    icon: Tv,
-    features: ['150+ channels', 'HD programming', 'Multiple receivers']
-  }
-];
 
 const OrderCompletion = () => {
   const { cartItems, getTotalPrice, addToCart } = useCart();
@@ -97,6 +74,7 @@ const OrderCompletion = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    businessName: '',
     email: '',
     phone: '',
     address: '',
@@ -123,11 +101,7 @@ const OrderCompletion = () => {
     (item.is_bundle && item.bundle_components?.includes('phone'))
   );
 
-  const currentProductTypes = cartItems.map(item => item.product_type);
-  const availableRecommendations = RECOMMENDATIONS.filter(rec => 
-    !currentProductTypes.includes(rec.category as any) && 
-    !cartItems.some(item => item.is_bundle && item.bundle_components?.includes(rec.category))
-  );
+  
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -210,15 +184,6 @@ const OrderCompletion = () => {
     }
   };
 
-  const handleAddRecommendation = async (recommendation: typeof RECOMMENDATIONS[0]) => {
-    await addToCart({
-      product_name: recommendation.name,
-      product_type: recommendation.category as any,
-      price: recommendation.price,
-      speed: recommendation.speed,
-      features: recommendation.features
-    });
-  };
 
   if (cartItems.length === 0) {
     return null; // Will redirect via useEffect
@@ -228,59 +193,14 @@ const OrderCompletion = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-4">
+          <Link to="/upsell" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-4">
             <ArrowLeft className="h-4 w-4" />
-            Continue Shopping
+            Back to Add Services
           </Link>
           <h1 className="text-3xl font-bold mb-2">Complete Your Order</h1>
-          <p className="text-muted-foreground">Enter your details to finalize your business services</p>
+          <p className="text-muted-foreground">Enter your business details to finalize your order</p>
         </div>
 
-        {/* Product Recommendations */}
-        {availableRecommendations.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>Recommended for You</span>
-                <Badge variant="secondary">Save More</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                {availableRecommendations.map((rec) => {
-                  const IconComponent = rec.icon;
-                  return (
-                    <div key={rec.category} className="border rounded-lg p-4 hover:border-primary transition-colors">
-                      <div className="flex items-center gap-3 mb-3">
-                        <IconComponent className="h-8 w-8 text-primary" />
-                        <div>
-                          <h4 className="font-semibold">{rec.name}</h4>
-                          <p className="text-lg font-bold text-primary">${rec.price}/mo</p>
-                        </div>
-                      </div>
-                      <ul className="text-sm text-muted-foreground mb-3">
-                        {rec.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-center gap-1">
-                            <Check className="h-3 w-3 text-primary" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => handleAddRecommendation(rec)}
-                      >
-                        Add to Order
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Order Summary */}
@@ -340,6 +260,17 @@ const OrderCompletion = () => {
                     />
                     {errors.lastName && <p className="text-sm text-destructive mt-1">{errors.lastName}</p>}
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="businessName">Business Name *</Label>
+                  <Input
+                    id="businessName"
+                    value={formData.businessName || ''}
+                    onChange={(e) => handleInputChange('businessName', e.target.value)}
+                    className={errors.businessName ? 'border-destructive' : ''}
+                  />
+                  {errors.businessName && <p className="text-sm text-destructive mt-1">{errors.businessName}</p>}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
