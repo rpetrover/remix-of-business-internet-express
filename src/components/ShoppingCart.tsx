@@ -8,17 +8,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 const ShoppingCart = () => {
-  const { cartItems, removeFromCart, getTotalPrice, getCartCount, user } = useCart();
+  const { cartItems, removeFromCart, getTotalPrice, getCartCount, user, isGuestUser } = useCart();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleCheckout = () => {
+    if (isGuestUser) {
+      // For guest users, suggest creating account or proceed as guest
+      const createAccount = window.confirm(
+        'Create an account to save your order and get updates, or continue as guest?'
+      );
+      if (createAccount) {
+        window.location.href = '/auth';
+        return;
+      }
+    }
+    
     // For now, just show a toast - you can integrate with payment processing later
     alert(`Checkout initiated for $${getTotalPrice().toFixed(2)}. Payment integration coming soon!`);
   };
-
-  if (!user) {
-    return null; // Don't show cart if user is not logged in
-  }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -37,7 +44,14 @@ const ShoppingCart = () => {
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Shopping Cart ({getCartCount()})</SheetTitle>
+          <SheetTitle>
+            Shopping Cart ({getCartCount()})
+            {isGuestUser && (
+              <div className="text-sm font-normal text-muted-foreground mt-1">
+                Sign in to save your cart
+              </div>
+            )}
+          </SheetTitle>
         </SheetHeader>
         
         <div className="mt-6 flex-1 space-y-4">
@@ -84,21 +98,37 @@ const ShoppingCart = () => {
               
               <Separator />
               
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total:</span>
-                  <span>${getTotalPrice().toFixed(2)}/month</span>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>Total:</span>
+                    <span>${getTotalPrice().toFixed(2)}/month</span>
+                  </div>
+                  
+                  {isGuestUser && (
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                      💡 Sign in to save your cart and get order updates
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={handleCheckout} 
+                    className="w-full" 
+                    size="lg"
+                    disabled={cartItems.length === 0}
+                  >
+                    {isGuestUser ? 'Continue as Guest' : 'Proceed to Checkout'}
+                  </Button>
+                  
+                  {isGuestUser && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.location.href = '/auth'}
+                      className="w-full"
+                    >
+                      Sign In to Save Cart
+                    </Button>
+                  )}
                 </div>
-                
-                <Button 
-                  onClick={handleCheckout} 
-                  className="w-full" 
-                  size="lg"
-                  disabled={cartItems.length === 0}
-                >
-                  Proceed to Checkout
-                </Button>
-              </div>
             </>
           )}
         </div>
