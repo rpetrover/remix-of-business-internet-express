@@ -5,10 +5,12 @@ import BusinessServices from "@/components/BusinessServices";
 import About from "@/components/About";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
+import VideoSplashBanner from "@/components/VideoSplashBanner";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
+      <VideoSplashBanner />
       <Header />
       <main>
         <div id="home">
