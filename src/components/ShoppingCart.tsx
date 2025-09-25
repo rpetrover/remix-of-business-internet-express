@@ -23,8 +23,8 @@ const ShoppingCart = () => {
       }
     }
     
-    // For now, just show a toast - you can integrate with payment processing later
-    alert(`Checkout initiated for $${getTotalPrice().toFixed(2)}. Payment integration coming soon!`);
+    // Navigate to order completion page
+    window.location.href = '/order-completion';
   };
 
   return (

@@ -85,6 +85,10 @@ const Header = () => {
                 <Phone className="h-4 w-4 mr-2" />
                 <span className="font-medium">(555) 123-4567</span>
               </div>
+              <div className="flex items-center space-x-3 mb-3">
+                <AuthButton />
+                <ShoppingCart />
+              </div>
               <Button variant="professional" size="sm" className="w-full" asChild>
                 <a href="/check-availability">Check Availability</a>
               </Button>
