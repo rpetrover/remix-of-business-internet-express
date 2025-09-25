@@ -6,10 +6,12 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Home", href: "#home" },
-    { name: "Plans", href: "#plans" },
-    { name: "About", href: "#about" },
-    { name: "Contact", href: "#contact" },
+    { name: "Internet", href: "#plans" },
+    { name: "Phone", href: "#phone" },
+    { name: "TV", href: "#tv" },
+    { name: "Mobile", href: "#mobile" },
+    { name: "Enterprise", href: "#enterprise" },
+    { name: "Support", href: "#contact" },
   ];
 
   return (
@@ -19,7 +21,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <a href="#home" className="text-2xl font-bold text-primary">
-              Business Internet<span className="text-accent">Express</span>
+              Spectrum<span className="text-foreground"> Business</span>
             </a>
           </div>
 
@@ -43,7 +45,7 @@ const Header = () => {
               <span className="font-medium">(555) 123-4567</span>
             </div>
             <Button variant="professional" size="sm">
-              Get Quote
+              Check Availability
             </Button>
           </div>
 
@@ -79,7 +81,7 @@ const Header = () => {
                 <span className="font-medium">(555) 123-4567</span>
               </div>
               <Button variant="professional" size="sm" className="w-full">
-                Get Quote
+                Check Availability
               </Button>
             </div>
           </div>

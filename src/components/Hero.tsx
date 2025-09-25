@@ -5,14 +5,8 @@ import { Phone, Mail, Clock } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroBackground})` }}
-      >
-        <div className="absolute inset-0 bg-primary/80" />
-      </div>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-primary">
+      {/* Clean Corporate Background */}
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-16">
@@ -20,32 +14,36 @@ const Hero = () => {
           {/* Left Column - Main Content */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-              Business Internet
-              <span className="block text-accent"> Express</span>
+              Fast, Reliable
+              <span className="block"> Business Internet</span>
             </h1>
+            <div className="bg-accent text-accent-foreground px-4 py-2 rounded-lg inline-block mb-6 font-semibold">
+              #1 in Customer Satisfaction for Small Business Internet Service
+            </div>
             <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-2xl">
-              Your trusted Spectrum Business Internet partner. Get enterprise-grade connectivity 
-              with dedicated support and competitive pricing.
+              Get the speed and reliability your business needs with Spectrum Business Internet. 
+              99.9% network uptime guaranteed with 24/7 support.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-              <Button variant="hero" size="lg" className="text-lg px-8 py-4">
-                Get Quote Now
+              <Button variant="cta" size="lg" className="text-lg px-8 py-4">
+                Check Availability
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary">
                 View Plans
               </Button>
             </div>
 
-            {/* Contact Info */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start text-primary-foreground/90">
+            {/* Trust Signals */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start text-primary-foreground/90 text-sm">
               <div className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                <span className="font-medium">Call: (555) 123-4567</span>
+                <span className="font-medium">✓ 99.9% Network Uptime</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                <span className="font-medium">support@businessinternetexpress.com</span>
+                <span className="font-medium">✓ 24/7 Support</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">✓ No Data Caps</span>
               </div>
             </div>
           </div>
@@ -54,8 +52,8 @@ const Hero = () => {
           <div className="flex justify-center lg:justify-end">
             <Card className="p-8 bg-gradient-card shadow-large border-0 w-full max-w-md">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Get Started Today</h3>
-                <p className="text-muted-foreground">Free consultation and quote</p>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Check Availability</h3>
+                <p className="text-muted-foreground">Enter your business address</p>
               </div>
               
               <form className="space-y-4">

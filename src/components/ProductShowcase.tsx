@@ -6,7 +6,7 @@ import { Check, Wifi, Shield, Headphones, Zap } from "lucide-react";
 const ProductShowcase = () => {
   const plans = [
     {
-      name: "Business Starter",
+      name: "Internet 100",
       speed: "100 Mbps",
       price: "$49.99",
       period: "/month",
@@ -15,43 +15,59 @@ const ProductShowcase = () => {
         "10 Mbps upload",
         "No data caps",
         "24/7 technical support",
-        "Professional installation"
+        "Professional installation",
+        "99.9% network uptime"
       ],
       recommended: false,
       icon: <Wifi className="h-8 w-8 text-primary" />
     },
     {
-      name: "Business Pro",
-      speed: "400 Mbps",
-      price: "$99.99",
+      name: "Internet 200",
+      speed: "200 Mbps", 
+      price: "$69.99",
       period: "/month",
       features: [
-        "Up to 400 Mbps download",
-        "20 Mbps upload",
+        "Up to 200 Mbps download",
+        "10 Mbps upload", 
         "No data caps",
-        "Priority customer support",
-        "Static IP included",
-        "Security suite"
+        "Priority technical support",
+        "Free professional installation",
+        "Security suite included"
       ],
       recommended: true,
       icon: <Zap className="h-8 w-8 text-primary" />
     },
     {
-      name: "Business Elite",
-      speed: "1 Gig",
-      price: "$199.99",
+      name: "Internet 400",
+      speed: "400 Mbps",
+      price: "$89.99", 
       period: "/month",
+      features: [
+        "Up to 400 Mbps download",
+        "20 Mbps upload",
+        "No data caps", 
+        "Dedicated account manager",
+        "Static IP included",
+        "Advanced security suite"
+      ],
+      recommended: false,
+      icon: <Shield className="h-8 w-8 text-primary" />
+    },
+    {
+      name: "Internet Gig",
+      speed: "1 Gig",
+      price: "$109.99",
+      period: "/month", 
       features: [
         "Up to 1 Gig download",
         "35 Mbps upload",
         "No data caps",
-        "Dedicated account manager",
+        "Priority support",
         "Multiple static IPs",
-        "Advanced security suite",
         "SLA guarantee"
       ],
       recommended: false,
-      icon: <Shield className="h-8 w-8 text-primary" />
+      icon: <Zap className="h-8 w-8 text-primary" />
     }
   ];
 
@@ -60,15 +76,15 @@ const ProductShowcase = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Spectrum Business Plans
+            Spectrum Business Internet
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Choose from our range of high-speed business internet solutions designed 
-            to keep your business connected and productive.
+            Fast, reliable internet service that keeps your business connected. 
+            Choose the speed that's right for your business needs.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {plans.map((plan, index) => (
             <Card 
               key={index} 
@@ -113,10 +129,10 @@ const ProductShowcase = () => {
                 </ul>
                 
                 <Button 
-                  variant={plan.recommended ? "hero" : "professional"} 
+                  variant={plan.recommended ? "cta" : "professional"} 
                   className="w-full py-3"
                 >
-                  Get This Plan
+                  Add to Cart
                 </Button>
               </CardContent>
             </Card>

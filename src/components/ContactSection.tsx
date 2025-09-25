@@ -12,11 +12,11 @@ const ContactSection = () => {
             Ready to Get Connected?
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
-            Let's Find Your Perfect Solution
+            Get Spectrum Business Internet
           </h2>
           <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Our team of business connectivity experts is ready to help you find the right 
-            Spectrum Business solution for your company's needs.
+            Connect with a Spectrum Business specialist to find the right internet solution for your business. 
+            Get competitive pricing and dedicated support.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ const ContactSection = () => {
                 Get Your Free Business Quote
               </CardTitle>
               <p className="text-center text-muted-foreground">
-                Fill out the form below and we'll contact you within 30 minutes
+                Complete the form to receive a personalized quote for your business
               </p>
             </CardHeader>
             <CardContent>
@@ -130,13 +130,13 @@ const ContactSection = () => {
                   />
                 </div>
 
-                <Button variant="hero" className="w-full py-4 text-lg font-semibold">
+                <Button variant="cta" className="w-full py-4 text-lg font-semibold">
                   Get My Free Quote Now
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  By submitting this form, you agree to be contacted by Business Internet Express 
-                  regarding Spectrum Business services.
+                  By submitting this form, you agree to be contacted by Spectrum Business 
+                  regarding internet services for your business.
                 </p>
               </form>
             </CardContent>
@@ -171,10 +171,10 @@ const ContactSection = () => {
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Email Support</h4>
                       <p className="text-lg font-medium text-primary mb-2">
-                        support@businessinternetexpress.com
+                        business@spectrum.com
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Detailed inquiries and technical support
+                        Business inquiries and support
                       </p>
                     </div>
                   </div>
