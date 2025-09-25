@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Tv, Smartphone, Building2 } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 const BusinessServices = () => {
+  const { addToCart } = useCart();
+  
   const services = [
     {
       name: "Business Phone",
@@ -123,12 +126,27 @@ const BusinessServices = () => {
                   ))}
                 </ul>
                 
-                <Button 
-                  variant={service.popular ? "cta" : "outline"} 
-                  className="w-full"
-                >
-                  Learn More
-                </Button>
+                {service.name !== "Enterprise Solutions" ? (
+                  <Button 
+                    variant={service.popular ? "cta" : "outline"} 
+                    className="w-full"
+                    onClick={() => addToCart({
+                      product_name: service.name,
+                      product_type: service.name.includes('Phone') || service.name.includes('Mobile') ? 'phone' : 'tv',
+                      price: parseFloat(service.startingPrice.replace('$', '')),
+                      features: service.features
+                    })}
+                  >
+                    Add to Cart
+                  </Button>
+                ) : (
+                  <Button 
+                    variant={service.popular ? "cta" : "outline"} 
+                    className="w-full"
+                  >
+                    Learn More
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}

@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Wifi, Shield, Headphones, Zap } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 const ProductShowcase = () => {
+  const { addToCart } = useCart();
+  
   const plans = [
     {
       name: "Internet 100",
@@ -131,6 +134,13 @@ const ProductShowcase = () => {
                 <Button 
                   variant={plan.recommended ? "cta" : "professional"} 
                   className="w-full py-3"
+                  onClick={() => addToCart({
+                    product_name: plan.name,
+                    product_type: 'internet',
+                    price: parseFloat(plan.price.replace('$', '')),
+                    speed: plan.speed,
+                    features: plan.features
+                  })}
                 >
                   Add to Cart
                 </Button>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Phone } from "lucide-react";
+import ShoppingCart from "@/components/ShoppingCart";
+import AuthButton from "@/components/AuthButton";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,6 +47,8 @@ const Header = () => {
               <Phone className="h-4 w-4 mr-2" />
               <span className="font-medium">(555) 123-4567</span>
             </div>
+            <AuthButton />
+            <ShoppingCart />
             <Button variant="professional" size="sm" asChild>
               <a href="/check-availability">Check Availability</a>
             </Button>

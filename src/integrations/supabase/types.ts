@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cart_items: {
+        Row: {
+          bundle_components: string[] | null
+          created_at: string
+          features: string[] | null
+          id: string
+          is_bundle: boolean | null
+          price: number
+          product_name: string
+          product_type: string
+          speed: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bundle_components?: string[] | null
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_bundle?: boolean | null
+          price: number
+          product_name: string
+          product_type: string
+          speed?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bundle_components?: string[] | null
+          created_at?: string
+          features?: string[] | null
+          id?: string
+          is_bundle?: boolean | null
+          price?: number
+          product_name?: string
+          product_type?: string
+          speed?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

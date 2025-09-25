@@ -11,6 +11,7 @@ import MobilePage from "./pages/Mobile";
 import CheckAvailabilityPage from "./pages/CheckAvailability";
 import EnterprisePage from "./pages/Enterprise";
 import SupportPage from "./pages/Support";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/check-availability" element={<CheckAvailabilityPage />} />
           <Route path="/enterprise" element={<EnterprisePage />} />
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
