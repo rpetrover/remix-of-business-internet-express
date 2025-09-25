@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Phone, CheckCircle, Users, Settings, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useCart } from "@/hooks/useCart";
 
 const PhonePage = () => {
+  const { addToCart, cartItems } = useCart();
   const features = [
     "Unlimited Local & Long Distance",
     "Voicemail to Email",
@@ -196,12 +198,41 @@ const PhonePage = () => {
                     ))}
                   </ul>
                   
-                  <Button 
-                    variant={plan.popular ? "cta" : "outline"} 
-                    className="w-full"
-                  >
-                    {plan.price === "Custom" ? "Contact Sales" : "Get Started"}
-                  </Button>
+                  {(() => {
+                    const isInCart = cartItems.some(item => 
+                      item.product_type === 'phone' && item.product_name === plan.name
+                    );
+                    
+                    if (plan.price === "Custom") {
+                      return (
+                        <Button variant="outline" className="w-full">
+                          Contact Sales
+                        </Button>
+                      );
+                    }
+                    
+                    return (
+                      <Button 
+                        variant={isInCart ? "secondary" : (plan.popular ? "cta" : "outline")} 
+                        className="w-full"
+                        onClick={() => addToCart({
+                          product_name: plan.name,
+                          product_type: 'phone',
+                          price: parseFloat(plan.price.replace('$', '')),
+                          features: plan.features
+                        })}
+                      >
+                        {isInCart ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Added to Cart
+                          </div>
+                        ) : (
+                          "Add to Cart"
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}

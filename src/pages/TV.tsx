@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tv, Trophy, Users, Clock, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useCart } from "@/hooks/useCart";
 
 const TVPage = () => {
+  const { addToCart, cartItems } = useCart();
   const packages = [
     {
       name: "Business TV Select",
@@ -190,12 +192,32 @@ const TVPage = () => {
                     ))}
                   </ul>
                   
-                  <Button 
-                    variant={pkg.popular ? "cta" : "outline"} 
-                    className="w-full"
-                  >
-                    Get Started
-                  </Button>
+                  {(() => {
+                    const isInCart = cartItems.some(item => 
+                      item.product_type === 'tv' && item.product_name === pkg.name
+                    );
+                    return (
+                      <Button 
+                        variant={isInCart ? "secondary" : (pkg.popular ? "cta" : "outline")} 
+                        className="w-full"
+                        onClick={() => addToCart({
+                          product_name: pkg.name,
+                          product_type: 'tv',
+                          price: parseFloat(pkg.price.replace('$', '')),
+                          features: pkg.features
+                        })}
+                      >
+                        {isInCart ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Added to Cart
+                          </div>
+                        ) : (
+                          "Add to Cart"
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}

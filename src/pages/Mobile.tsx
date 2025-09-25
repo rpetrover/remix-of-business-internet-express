@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Smartphone, Zap, Shield, Users, CheckCircle, Wifi } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useCart } from "@/hooks/useCart";
 
 const MobilePage = () => {
+  const { addToCart, cartItems } = useCart();
   const plans = [
     {
       name: "By the Gig",
@@ -201,12 +203,32 @@ const MobilePage = () => {
                     ))}
                   </ul>
                   
-                  <Button 
-                    variant={plan.popular ? "cta" : "outline"} 
-                    className="w-full"
-                  >
-                    Get Started
-                  </Button>
+                  {(() => {
+                    const isInCart = cartItems.some(item => 
+                      item.product_type === 'phone' && item.product_name === plan.name
+                    );
+                    return (
+                      <Button 
+                        variant={isInCart ? "secondary" : (plan.popular ? "cta" : "outline")} 
+                        className="w-full"
+                        onClick={() => addToCart({
+                          product_name: plan.name,
+                          product_type: 'phone',
+                          price: parseFloat(plan.price.replace(/\$|per line\/month|per GB/g, '')),
+                          features: plan.features
+                        })}
+                      >
+                        {isInCart ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Added to Cart
+                          </div>
+                        ) : (
+                          "Add to Cart"
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}

@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Wifi, Shield, Headphones, Zap } from "lucide-react";
+import { Check, Wifi, Shield, Headphones, Zap, CheckCircle } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 
 const ProductShowcase = () => {
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
   
   const plans = [
     {
@@ -131,19 +131,33 @@ const ProductShowcase = () => {
                   ))}
                 </ul>
                 
-                <Button 
-                  variant={plan.recommended ? "cta" : "professional"} 
-                  className="w-full py-3"
-                  onClick={() => addToCart({
-                    product_name: plan.name,
-                    product_type: 'internet',
-                    price: parseFloat(plan.price.replace('$', '')),
-                    speed: plan.speed,
-                    features: plan.features
-                  })}
-                >
-                  Add to Cart
-                </Button>
+                {(() => {
+                  const isInCart = cartItems.some(item => 
+                    item.product_type === 'internet' && item.product_name === plan.name
+                  );
+                  return (
+                    <Button 
+                      variant={isInCart ? "secondary" : (plan.recommended ? "cta" : "professional")} 
+                      className="w-full py-3"
+                      onClick={() => addToCart({
+                        product_name: plan.name,
+                        product_type: 'internet',
+                        price: parseFloat(plan.price.replace('$', '')),
+                        speed: plan.speed,
+                        features: plan.features
+                      })}
+                    >
+                      {isInCart ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Added to Cart
+                        </div>
+                      ) : (
+                        "Add to Cart"
+                      )}
+                    </Button>
+                  );
+                })()}
               </CardContent>
             </Card>
           ))}
