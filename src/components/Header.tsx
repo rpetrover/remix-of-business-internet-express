@@ -22,6 +22,7 @@ const Header = () => {
           <div className="flex items-center">
             <a href="#home" className="text-2xl font-bold text-primary">
               Spectrum<span className="text-foreground"> Business</span>
+              <span className="text-sm text-muted-foreground font-normal ml-2">by Business Internet Express</span>
             </a>
           </div>
 
