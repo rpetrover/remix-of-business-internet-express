@@ -6,12 +6,12 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Internet", href: "#plans" },
-    { name: "Phone", href: "#phone" },
-    { name: "TV", href: "#tv" },
-    { name: "Mobile", href: "#mobile" },
-    { name: "Enterprise", href: "#enterprise" },
-    { name: "Support", href: "#contact" },
+    { name: "Internet", href: "/#plans" },
+    { name: "Phone", href: "/phone" },
+    { name: "TV", href: "/tv" },
+    { name: "Mobile", href: "/mobile" },
+    { name: "Enterprise", href: "/enterprise" },
+    { name: "Support", href: "/support" },
   ];
 
   return (
@@ -44,8 +44,8 @@ const Header = () => {
               <Phone className="h-4 w-4 mr-2" />
               <span className="font-medium">(555) 123-4567</span>
             </div>
-            <Button variant="professional" size="sm">
-              Check Availability
+            <Button variant="professional" size="sm" asChild>
+              <a href="/check-availability">Check Availability</a>
             </Button>
           </div>
 
@@ -80,8 +80,8 @@ const Header = () => {
                 <Phone className="h-4 w-4 mr-2" />
                 <span className="font-medium">(555) 123-4567</span>
               </div>
-              <Button variant="professional" size="sm" className="w-full">
-                Check Availability
+              <Button variant="professional" size="sm" className="w-full" asChild>
+                <a href="/check-availability">Check Availability</a>
               </Button>
             </div>
           </div>
