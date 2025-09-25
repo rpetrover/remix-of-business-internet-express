@@ -60,14 +60,6 @@ const VideoSplashBanner = () => {
     return () => clearInterval(interval);
   }, [isPlaying, scenes.length]);
 
-  // Auto-close banner after all scenes - 6 seconds total (3 scenes * 2 seconds each)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowBanner(false);
-    }, 6000); // 6 seconds total (3 panes * 2 seconds each)
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
