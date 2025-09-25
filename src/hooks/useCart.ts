@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export interface CartItem {
   id?: string;
@@ -46,6 +47,7 @@ export const useCart = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Load guest cart from localStorage initially
@@ -226,6 +228,9 @@ export const useCart = () => {
         title: "Added to Cart",
         description: `${item.product_name} has been added to your cart`
       });
+      
+      // Navigate to order completion page
+      navigate('/order-completion');
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);

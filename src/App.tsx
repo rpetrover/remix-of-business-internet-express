@@ -12,6 +12,7 @@ import CheckAvailabilityPage from "./pages/CheckAvailability";
 import EnterprisePage from "./pages/Enterprise";
 import SupportPage from "./pages/Support";
 import Auth from "./pages/Auth";
+import OrderCompletion from "./pages/OrderCompletion";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/enterprise" element={<EnterprisePage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/order-completion" element={<OrderCompletion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
