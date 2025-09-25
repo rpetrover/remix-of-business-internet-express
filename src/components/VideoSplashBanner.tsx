@@ -10,7 +10,7 @@ const VideoSplashBanner = () => {
   const [currentScene, setCurrentScene] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Define business scenes
+  // Define business scenes with video sources
   const scenes = [
     {
       id: 'internet',
@@ -19,7 +19,8 @@ const VideoSplashBanner = () => {
       icon: <Wifi className="h-16 w-16" />,
       description: 'Teams collaborating seamlessly with fiber-fast internet',
       bgGradient: 'from-blue-600 via-blue-700 to-blue-900',
-      accentColor: 'text-blue-200'
+      accentColor: 'text-blue-200',
+      videoSrc: 'https://assets.mixkit.co/videos/preview/mixkit-businesswoman-working-on-a-laptop-in-an-office-4970-large.mp4'
     },
     {
       id: 'phone',
@@ -28,7 +29,8 @@ const VideoSplashBanner = () => {
       icon: <Phone className="h-16 w-16" />,
       description: 'Business calls handled with premium voice features',
       bgGradient: 'from-green-600 via-green-700 to-green-900',
-      accentColor: 'text-green-200'
+      accentColor: 'text-green-200',
+      videoSrc: 'https://assets.mixkit.co/videos/preview/mixkit-business-meeting-in-an-office-4990-large.mp4'
     },
     {
       id: 'tv',
@@ -37,7 +39,8 @@ const VideoSplashBanner = () => {
       icon: <Tv className="h-16 w-16" />,
       description: 'Bars and restaurants keeping customers entertained',
       bgGradient: 'from-purple-600 via-purple-700 to-purple-900',
-      accentColor: 'text-purple-200'
+      accentColor: 'text-purple-200',
+      videoSrc: 'https://assets.mixkit.co/videos/preview/mixkit-customers-at-a-bar-watching-tv-4998-large.mp4'
     }
   ];
 
@@ -50,21 +53,21 @@ const VideoSplashBanner = () => {
           setCurrentScene(prevScene => (prevScene + 1) % scenes.length);
           return 0;
         }
-        return prev + 2; // Adjust speed as needed
+        return prev + 5; // Increased speed - was 2, now 5
       });
-    }, 200); // Update every 200ms
+    }, 100); // Faster updates - was 200ms, now 100ms
 
     return () => clearInterval(interval);
   }, [isPlaying, scenes.length]);
 
-  // Auto-close banner after all scenes
+  // Auto-close banner after all scenes - faster cycle
   useEffect(() => {
     if (currentScene === 0 && progress === 0) {
       const timer = setTimeout(() => {
         if (currentScene === scenes.length - 1 && progress >= 100) {
           setShowBanner(false);
         }
-      }, 15000); // Auto-close after 15 seconds total
+      }, 8000); // Reduced from 15 seconds to 8 seconds total
 
       return () => clearTimeout(timer);
     }
@@ -88,80 +91,29 @@ const VideoSplashBanner = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {/* Dynamic Background with Scene-Based Gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${currentSceneData.bgGradient} transition-all duration-1000`}>
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0">
-          {/* Internet Scene Background */}
-          {currentScene === 0 && (
-            <div className="absolute inset-0 animate-fade-in">
-              {/* Office Grid Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="grid grid-cols-8 grid-rows-6 h-full gap-4 p-8">
-                  {Array.from({length: 48}).map((_, i) => (
-                    <div key={i} className="bg-white/20 rounded animate-pulse" style={{animationDelay: `${i * 0.1}s`}} />
-                  ))}
-                </div>
-              </div>
-              {/* Floating connectivity icons */}
-              <Wifi className="absolute top-1/4 left-1/4 h-8 w-8 text-white/30 animate-pulse" />
-              <Building2 className="absolute top-1/3 right-1/4 h-6 w-6 text-white/40 animate-pulse" style={{animationDelay: '1s'}} />
-              <Users className="absolute bottom-1/3 left-1/3 h-10 w-10 text-white/25 animate-pulse" style={{animationDelay: '0.5s'}} />
-            </div>
-          )}
-
-          {/* Phone Scene Background */}
-          {currentScene === 1 && (
-            <div className="absolute inset-0 animate-fade-in">
-              {/* Communication Wave Pattern */}
-              <div className="absolute inset-0">
-                {Array.from({length: 5}).map((_, i) => (
-                  <div 
-                    key={i}
-                    className="absolute rounded-full border-2 border-white/20 animate-pulse"
-                    style={{
-                      width: `${(i + 1) * 200}px`,
-                      height: `${(i + 1) * 200}px`,
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      animationDelay: `${i * 0.3}s`
-                    }}
-                  />
-                ))}
-              </div>
-              {/* Floating phone icons */}
-              <Phone className="absolute top-1/4 right-1/4 h-6 w-6 text-white/40 animate-pulse" />
-              <Users className="absolute bottom-1/4 left-1/4 h-8 w-8 text-white/30 animate-pulse" style={{animationDelay: '0.7s'}} />
-            </div>
-          )}
-
-          {/* TV Scene Background */}
-          {currentScene === 2 && (
-            <div className="absolute inset-0 animate-fade-in">
-              {/* Entertainment Grid */}
-              <div className="absolute inset-0 opacity-15">
-                <div className="grid grid-cols-6 grid-rows-4 h-full gap-6 p-12">
-                  {Array.from({length: 24}).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="bg-white/30 rounded-lg animate-pulse border border-white/20" 
-                      style={{animationDelay: `${i * 0.15}s`}} 
-                    />
-                  ))}
-                </div>
-              </div>
-              {/* Floating TV/entertainment icons */}
-              <Tv className="absolute top-1/3 left-1/4 h-10 w-10 text-white/35 animate-pulse" />
-              <Coffee className="absolute bottom-1/4 right-1/3 h-6 w-6 text-white/40 animate-pulse" style={{animationDelay: '0.8s'}} />
-              <Users className="absolute top-2/3 right-1/4 h-8 w-8 text-white/30 animate-pulse" style={{animationDelay: '0.4s'}} />
-            </div>
-          )}
-        </div>
+      {/* Video Background for Each Scene */}
+      <div className="absolute inset-0">
+        {scenes.map((scene, index) => (
+          <video
+            key={scene.id}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              index === currentScene ? 'opacity-100' : 'opacity-0'
+            }`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          >
+            <source src={scene.videoSrc} type="video/mp4" />
+            {/* Fallback gradient background */}
+            <div className={`w-full h-full bg-gradient-to-br ${scene.bgGradient}`} />
+          </video>
+        ))}
       </div>
 
       {/* Dark Overlay for Better Text Readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Content Overlay */}
       <div className="relative z-10 flex flex-col justify-center items-center h-full text-white text-center px-4">
@@ -184,25 +136,25 @@ const VideoSplashBanner = () => {
             </div>
 
             {/* Dynamic Scene Title */}
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-in transition-all duration-1000">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-in transition-all duration-500">
               {currentSceneData.title}
             </h2>
             
-            <p className="text-xl md:text-2xl text-white/90 mb-2 animate-fade-in" style={{animationDelay: '0.3s'}}>
+            <p className="text-xl md:text-2xl text-white/90 mb-2 animate-fade-in" style={{animationDelay: '0.2s'}}>
               {currentSceneData.subtitle}
             </p>
             
-            <p className={`text-lg ${currentSceneData.accentColor} mb-8 animate-fade-in transition-colors duration-1000`} style={{animationDelay: '0.6s'}}>
+            <p className={`text-lg ${currentSceneData.accentColor} mb-8 animate-fade-in transition-colors duration-500`} style={{animationDelay: '0.4s'}}>
               {currentSceneData.description}
             </p>
           </div>
 
           {/* Scene Indicators */}
-          <div className="flex justify-center gap-3 mb-8 animate-fade-in" style={{animationDelay: '0.9s'}}>
+          <div className="flex justify-center gap-3 mb-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
             {scenes.map((_, index) => (
               <div 
                 key={index}
-                className={`h-2 w-8 rounded-full transition-all duration-500 ${
+                className={`h-2 w-8 rounded-full transition-all duration-300 ${
                   index === currentScene ? 'bg-white' : 'bg-white/30'
                 }`}
               />
@@ -210,7 +162,7 @@ const VideoSplashBanner = () => {
           </div>
 
           {/* CTA Button */}
-          <div className="animate-fade-in" style={{animationDelay: '1.2s'}}>
+          <div className="animate-fade-in" style={{animationDelay: '0.8s'}}>
             <Button 
               size="lg" 
               className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-4 rounded-full shadow-glow hover-scale transition-all duration-300"
@@ -228,7 +180,7 @@ const VideoSplashBanner = () => {
         <div className="mb-4">
           <div className="h-1 bg-white/30 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-white transition-all duration-300"
+              className="h-full bg-white transition-all duration-100"
               style={{ width: `${progress}%` }}
             />
           </div>
