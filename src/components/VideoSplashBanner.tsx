@@ -53,25 +53,21 @@ const VideoSplashBanner = () => {
           setCurrentScene(prevScene => (prevScene + 1) % scenes.length);
           return 0;
         }
-        return prev + 5; // Increased speed - was 2, now 5
+        return prev + 5; // 5% every 100ms = 100% in 2000ms (2 seconds)
       });
-    }, 100); // Faster updates - was 200ms, now 100ms
+    }, 100); // Update every 100ms for smooth progress
 
     return () => clearInterval(interval);
   }, [isPlaying, scenes.length]);
 
-  // Auto-close banner after all scenes - faster cycle
+  // Auto-close banner after all scenes - 6 seconds total (3 scenes * 2 seconds each)
   useEffect(() => {
-    if (currentScene === 0 && progress === 0) {
-      const timer = setTimeout(() => {
-        if (currentScene === scenes.length - 1 && progress >= 100) {
-          setShowBanner(false);
-        }
-      }, 8000); // Reduced from 15 seconds to 8 seconds total
+    const timer = setTimeout(() => {
+      setShowBanner(false);
+    }, 6000); // 6 seconds total (3 panes * 2 seconds each)
 
-      return () => clearTimeout(timer);
-    }
-  }, [currentScene, progress, scenes.length]);
+    return () => clearTimeout(timer);
+  }, []);
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
