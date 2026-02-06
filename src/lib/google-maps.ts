@@ -5,7 +5,7 @@
 //   - Places API
 //   - Maps Static API
 //   - Street View Static API
-export const GOOGLE_MAPS_API_KEY = "";
+export const GOOGLE_MAPS_API_KEY = "AIzaSyBS37Bb8FIGRTyadw5yb2CH1KXY_JR8RtY";
 
 let loadPromise: Promise<void> | null = null;
 
