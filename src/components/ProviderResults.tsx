@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Award,
   Wifi,
+  Building2,
 } from "lucide-react";
 import { type InternetProvider } from "@/data/providers";
 
@@ -112,11 +113,16 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
-              <Globe className="h-5 w-5 text-primary" />
+              {provider.dedicatedFiber ? <Building2 className="h-5 w-5 text-primary" /> : <Globe className="h-5 w-5 text-primary" />}
               {provider.name}
             </CardTitle>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <Badge variant="secondary">{provider.technology}</Badge>
+              {provider.dedicatedFiber && (
+                <Badge className="bg-accent/10 text-accent border-accent">
+                  Enterprise Grade
+                </Badge>
+              )}
               {provider.nationwide && (
                 <Badge variant="outline" className="text-primary border-primary">
                   Available Nationwide
@@ -144,6 +150,8 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable }: ProviderR
   const hasProviders = allProviders.length > 0;
   const preferredProvider = spectrumAvailable ? allProviders.find((p) => p.id === "spectrum") : null;
   const otherProviders = allProviders.filter((p) => p.id !== "spectrum");
+  const broadbandProviders = otherProviders.filter((p) => !p.dedicatedFiber);
+  const dedicatedFiberProviders = otherProviders.filter((p) => p.dedicatedFiber);
 
   return (
     <section className="py-16 bg-secondary/30 animate-in fade-in duration-500">
@@ -170,13 +178,29 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable }: ProviderR
           </div>
         )}
 
-        {/* Other Available Providers */}
-        {otherProviders.length > 0 && (
+        {/* Other Broadband Providers */}
+        {broadbandProviders.length > 0 && (
           <div className="max-w-5xl mx-auto space-y-4 mb-12">
             <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
-              {preferredProvider ? "Other Providers Available" : "Available Providers in Your Area"}
+              {preferredProvider ? "Other Broadband Providers" : "Broadband Providers in Your Area"}
             </h3>
-            {otherProviders.map((provider) => (
+            {broadbandProviders.map((provider) => (
+              <OtherProviderCard key={provider.id} provider={provider} />
+            ))}
+          </div>
+        )}
+
+        {/* Dedicated Fiber Providers */}
+        {dedicatedFiberProviders.length > 0 && (
+          <div className="max-w-5xl mx-auto space-y-4 mb-12">
+            <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
+              <Building2 className="inline h-6 w-6 mr-2 text-primary" />
+              Dedicated Fiber Providers
+            </h3>
+            <p className="text-center text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Enterprise-grade dedicated internet with guaranteed bandwidth, SLA-backed uptime, and symmetrical speeds
+            </p>
+            {dedicatedFiberProviders.map((provider) => (
               <OtherProviderCard key={provider.id} provider={provider} />
             ))}
           </div>
