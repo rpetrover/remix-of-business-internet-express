@@ -8,14 +8,98 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Verify Resend webhook signature using Svix
+async function verifyWebhookSignature(
+  payload: string,
+  headers: Headers,
+  secret: string
+): Promise<boolean> {
+  try {
+    const svixId = headers.get("svix-id");
+    const svixTimestamp = headers.get("svix-timestamp");
+    const svixSignature = headers.get("svix-signature");
+
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      return false;
+    }
+
+    // Check timestamp to prevent replay attacks (allow 5 minutes tolerance)
+    const timestampSeconds = parseInt(svixTimestamp, 10);
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - timestampSeconds) > 300) {
+      console.error("Webhook timestamp too old or in the future");
+      return false;
+    }
+
+    // Decode the secret (Resend uses whsec_ prefix with base64 encoded key)
+    const secretBytes = Uint8Array.from(
+      atob(secret.startsWith("whsec_") ? secret.slice(6) : secret),
+      (c) => c.charCodeAt(0)
+    );
+
+    // Create the signature content
+    const signContent = `${svixId}.${svixTimestamp}.${payload}`;
+    const encoder = new TextEncoder();
+
+    // Import key and sign
+    const key = await crypto.subtle.importKey(
+      "raw",
+      secretBytes,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(signContent)
+    );
+
+    const expectedSignature = btoa(
+      String.fromCharCode(...new Uint8Array(signature))
+    );
+
+    // Svix sends multiple signatures separated by spaces, each prefixed with version
+    const signatures = svixSignature.split(" ");
+    for (const sig of signatures) {
+      const [version, sigValue] = sig.split(",");
+      if (version === "v1" && sigValue === expectedSignature) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Webhook verification error:", error);
+    return false;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Resend sends inbound emails as POST with webhook payload
-    const payload = await req.json();
+    const rawBody = await req.text();
+
+    // Verify webhook signature if secret is configured
+    const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const isValid = await verifyWebhookSignature(rawBody, req.headers, webhookSecret);
+      if (!isValid) {
+        console.error("Invalid webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid webhook signature" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    } else {
+      console.warn("RESEND_WEBHOOK_SECRET not configured - webhook signature verification disabled");
+    }
+
+    const payload = JSON.parse(rawBody);
     console.log("Inbound email received:", JSON.stringify(payload));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -30,15 +114,23 @@ const handler = async (req: Request): Promise<Response> => {
     const bodyHtml = payload.html || payload.data?.html || null;
     const bodyText = payload.text || payload.data?.text || null;
 
+    // Validate required fields
+    if (!fromEmail || typeof fromEmail !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Invalid payload: missing from email" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Store the inbound email
     const { data: emailData, error: insertError } = await supabase.from("emails").insert({
       direction: "inbound",
-      from_email: fromEmail,
-      from_name: fromName,
-      to_email: toEmail,
-      subject: emailSubject,
-      body_html: bodyHtml,
-      body_text: bodyText,
+      from_email: fromEmail.slice(0, 320),
+      from_name: fromName ? String(fromName).slice(0, 200) : null,
+      to_email: typeof toEmail === 'string' ? toEmail.slice(0, 320) : 'service@businessinternetexpress.com',
+      subject: typeof emailSubject === 'string' ? emailSubject.slice(0, 500) : '(No subject)',
+      body_html: bodyHtml ? String(bodyHtml).slice(0, 100000) : null,
+      body_text: bodyText ? String(bodyText).slice(0, 100000) : null,
       status: "received",
     }).select().single();
 
@@ -153,7 +245,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error processing inbound email:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to process email" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
