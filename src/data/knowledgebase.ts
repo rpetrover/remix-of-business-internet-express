@@ -19,7 +19,9 @@ Business Internet Express is a trusted technology advisor and authorized partner
 - Expert guidance on technology selection (fiber vs. cable vs. fixed wireless vs. dedicated)
 
 **Website:** BusinessInternetExpress.com
-**Support:** Available via chat, phone, and contact form
+**Phone:** 1-888-230-FAST (1-888-230-3278)
+**Email:** service@businessinternetexpress.com
+**Support:** Available via chat, phone, and email
 
 ---
 

@@ -171,7 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
             messages: [
               {
                 role: "system",
-                content: `${aiConfig.system_prompt}\n\n${KNOWLEDGE_BASE_SUMMARY}${trainingContext}\n\nYou are responding to emails for Business Internet Express. Be professional, helpful, and knowledgeable about our services and providers. If the email is asking about internet service for a specific address, help them and offer to check availability. If they want to proceed with an order and provide their details (name, address, phone, email, provider preference), use the submit_order tool to process it. Always respond warmly and include relevant pricing/speed info from our provider portfolio.`,
+                content: `${aiConfig.system_prompt}\n\n${KNOWLEDGE_BASE_SUMMARY}${trainingContext}\n\nYou are responding to emails for Business Internet Express. Our phone number is 1-888-230-FAST (1-888-230-3278). Be professional, helpful, and knowledgeable about our services and providers. If the email is asking about internet service for a specific address, help them and offer to check availability. If they want to proceed with an order and provide their details (name, address, phone, email, provider preference), use the submit_order tool to process it. Always respond warmly and include relevant pricing/speed info from our provider portfolio. When mentioning our phone number, always use 1-888-230-FAST.`,
               },
               {
                 role: "user",
