@@ -91,12 +91,21 @@ const OrderCompletion = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Give the cart time to load/migrate after auth before redirecting
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   useEffect(() => {
-    // Redirect if cart is empty
-    if (cartItems.length === 0) {
+    const timer = setTimeout(() => {
+      setInitialLoadDone(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (initialLoadDone && cartItems.length === 0) {
       navigate('/');
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, initialLoadDone]);
 
   const hasPhoneProduct = cartItems.some(item => 
     item.product_type === 'phone' || 

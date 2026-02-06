@@ -79,12 +79,20 @@ const Upsell = () => {
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   useEffect(() => {
-    // Redirect if cart is empty
-    if (cartItems.length === 0) {
+    const timer = setTimeout(() => {
+      setInitialLoadDone(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (initialLoadDone && cartItems.length === 0) {
       navigate('/');
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, initialLoadDone]);
 
   const currentProductTypes = cartItems.map(item => item.product_type);
   const availableRecommendations = PRODUCT_RECOMMENDATIONS.filter(rec => 
