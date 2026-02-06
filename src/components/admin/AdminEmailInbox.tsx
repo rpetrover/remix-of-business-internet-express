@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, MailOpen, Reply, Bot, RefreshCw, Send, Inbox, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import DOMPurify from 'dompurify';
 
 interface Email {
   id: string;
@@ -221,7 +222,16 @@ const AdminEmailInbox = () => {
               {/* Email body */}
               <div className="bg-muted/30 rounded-lg p-4 min-h-[200px] max-h-[300px] overflow-auto">
                 {selectedEmail.body_html ? (
-                  <div dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} className="prose prose-sm max-w-none" />
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(selectedEmail.body_html, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'div', 'span', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'img', 'blockquote', 'pre', 'code'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'src', 'alt', 'width', 'height', 'class'],
+                        ALLOW_DATA_ATTR: false,
+                      }),
+                    }}
+                    className="prose prose-sm max-w-none"
+                  />
                 ) : (
                   <p className="text-sm whitespace-pre-wrap">{selectedEmail.body_text || 'No content'}</p>
                 )}

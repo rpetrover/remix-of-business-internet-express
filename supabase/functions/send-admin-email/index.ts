@@ -2,8 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -16,6 +14,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authenticate and authorize admin
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+    const { data: isAdmin } = await supabaseAuth.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const { to, toName, subject, body, inReplyTo } = await req.json();
 
     if (!to?.trim() || !subject?.trim() || !body?.trim()) {
@@ -24,6 +59,8 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
@@ -44,12 +81,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Admin email sent:", emailResponse);
 
-    // Log the outbound email in the database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Log the outbound email using service role
+    const supabaseService = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    await supabase.from("emails").insert({
+    await supabaseService.from("emails").insert({
       direction: "outbound",
       from_email: "noreply@businessinternetexpress.com",
       from_name: "Business Internet Express",
@@ -69,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error sending admin email:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send email" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
