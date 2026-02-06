@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import AddressImagery from "@/components/AddressImagery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -209,6 +210,9 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
             </a>
           )}
         </div>
+
+        {/* Address Imagery */}
+        <AddressImagery address={address} />
 
         {/* Preferred Provider (Spectrum) */}
         {preferredProvider && (

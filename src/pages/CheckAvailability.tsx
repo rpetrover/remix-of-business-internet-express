@@ -10,6 +10,8 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { getAllAvailableProviders } from "@/data/providers";
 import { supabase } from "@/integrations/supabase/client";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import type { PlaceResult } from "@/hooks/useGooglePlaces";
 
 const CheckAvailabilityPage = () => {
   const [formData, setFormData] = useState({
@@ -26,6 +28,16 @@ const CheckAvailabilityPage = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: place.address,
+      city: place.city,
+      state: place.state,
+      zipCode: place.zipCode,
+    }));
   };
 
   const getFullAddress = () => {
@@ -133,11 +145,12 @@ const CheckAvailabilityPage = () => {
                     <Label htmlFor="address">
                       Street Address <span className="text-destructive">*</span>
                     </Label>
-                    <Input
+                    <AddressAutocomplete
                       id="address"
                       value={formData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      placeholder="123 Business Street"
+                      onChange={(value) => handleInputChange("address", value)}
+                      onPlaceSelect={handlePlaceSelect}
+                      placeholder="Start typing your address..."
                       required
                     />
                   </div>

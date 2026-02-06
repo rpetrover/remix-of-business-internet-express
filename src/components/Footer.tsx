@@ -106,11 +106,17 @@ const Footer = () => {
         </div>
 
         {/* Disclaimer */}
-        <div className="mt-6 pt-6 border-t border-primary-foreground/20">
+        <div className="mt-6 pt-6 border-t border-primary-foreground/20 space-y-3">
           <p className="text-xs text-primary-foreground/60 text-center">
             Business Internet Express is an authorized agent for multiple internet service providers 
             including Spectrum, Comcast, Frontier, Verizon, and others. All trademarks are the property 
             of their respective owners. Pricing and availability subject to change. Service not available in all areas.
+          </p>
+          <p className="text-xs text-primary-foreground/60 text-center">
+            <strong>Installation Disclaimer:</strong> "Installation in under 24 hours" and "Same-Day & Next-Day Installation" 
+            are best-effort goals and are not guaranteed. Actual installation timelines depend on the service provider, 
+            location, infrastructure availability, and scheduling. Some installations may require additional time 
+            for equipment delivery, permits, or construction. Contact us for a more accurate estimate for your specific location.
           </p>
         </div>
       </div>
