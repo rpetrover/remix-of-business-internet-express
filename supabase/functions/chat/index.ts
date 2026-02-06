@@ -198,6 +198,7 @@ If the customer hasn't selected a specific plan yet, help them find one first ba
 - Use specific pricing and speeds from the knowledge base — don't be vague
 - End with a helpful next step or question when appropriate
 - Never make up information — if you don't know, say so and offer to connect them with a specialist
+- When providing our phone number, always use the marketing format: **1-888-230-FAST** (and optionally mention it's 1-888-230-3278)
 - When collecting order info, be systematic but conversational — don't dump all questions at once`;
 
 serve(async (req) => {
