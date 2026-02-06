@@ -21,8 +21,16 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
       >
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Globe className="h-5 w-5 text-primary" />
+          <CardTitle className="text-xl flex items-center gap-2">
+              {provider.logo ? (
+                <img
+                  src={provider.logo}
+                  alt={`${provider.name} logo`}
+                  className="h-10 w-10 object-contain rounded"
+                />
+              ) : (
+                <Globe className="h-5 w-5 text-primary" />
+              )}
               {provider.name}
             </CardTitle>
             <div className="flex items-center gap-2 mt-2">

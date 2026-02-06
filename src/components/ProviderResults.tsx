@@ -73,6 +73,24 @@ const ProviderPlanCards = ({ provider, isPreferred }: { provider: InternetProvid
   </div>
 );
 
+const ProviderLogo = ({ provider, size = "md" }: { provider: InternetProvider; size?: "sm" | "md" | "lg" }) => {
+  const sizeClasses = { sm: "h-8 w-8", md: "h-10 w-10", lg: "h-12 w-12" };
+  if (provider.logo) {
+    return (
+      <img
+        src={provider.logo}
+        alt={`${provider.name} logo`}
+        className={`${sizeClasses[size]} object-contain rounded`}
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+          e.currentTarget.nextElementSibling?.classList.remove("hidden");
+        }}
+      />
+    );
+  }
+  return null;
+};
+
 const PreferredProviderCard = ({ provider }: { provider: InternetProvider }) => (
   <Card className="border-2 border-primary shadow-lg overflow-hidden">
     <div className="bg-primary text-primary-foreground px-6 py-3 flex items-center gap-2">
@@ -83,7 +101,11 @@ const PreferredProviderCard = ({ provider }: { provider: InternetProvider }) => 
       <div className="flex items-center justify-between">
         <div>
           <CardTitle className="text-2xl flex items-center gap-2">
-            <Wifi className="h-6 w-6 text-primary" />
+            {provider.logo ? (
+              <ProviderLogo provider={provider} size="lg" />
+            ) : (
+              <Wifi className="h-6 w-6 text-primary" />
+            )}
             {provider.name}
           </CardTitle>
           <div className="flex items-center gap-2 mt-2">
@@ -113,8 +135,14 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
       >
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              {provider.dedicatedFiber ? <Building2 className="h-5 w-5 text-primary" /> : <Globe className="h-5 w-5 text-primary" />}
+          <CardTitle className="text-xl flex items-center gap-2">
+              {provider.logo ? (
+                <ProviderLogo provider={provider} />
+              ) : provider.dedicatedFiber ? (
+                <Building2 className="h-5 w-5 text-primary" />
+              ) : (
+                <Globe className="h-5 w-5 text-primary" />
+              )}
               {provider.name}
             </CardTitle>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
