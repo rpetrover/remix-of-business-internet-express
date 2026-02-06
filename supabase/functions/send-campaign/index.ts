@@ -14,6 +14,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authenticate and authorize admin
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+    const { data: isAdmin } = await supabaseAuth.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const { campaignId } = await req.json();
 
     if (!campaignId) {
@@ -23,13 +60,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Use service role for database operations
+    const supabaseService = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
     // Get campaign
-    const { data: campaign, error: campaignError } = await supabase
+    const { data: campaign, error: campaignError } = await supabaseService
       .from("campaigns")
       .select("*")
       .eq("id", campaignId)
@@ -40,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get pending recipients
-    const { data: contacts, error: contactsError } = await supabase
+    const { data: contacts, error: contactsError } = await supabaseService
       .from("campaign_contacts")
       .select("*")
       .eq("campaign_id", campaignId)
@@ -55,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Mark campaign as sending
-    await supabase.from("campaigns").update({ status: "sending" }).eq("id", campaignId);
+    await supabaseService.from("campaigns").update({ status: "sending" }).eq("id", campaignId);
 
     let sentCount = 0;
     let failedCount = 0;
@@ -70,7 +106,7 @@ const handler = async (req: Request): Promise<Response> => {
           html: campaign.body_html || `<p>${campaign.subject}</p>`,
         });
 
-        await supabase
+        await supabaseService
           .from("campaign_contacts")
           .update({ status: "sent", sent_at: new Date().toISOString() })
           .eq("id", contact.id);
@@ -78,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
         sentCount++;
       } catch (err: any) {
         console.error(`Failed to send to ${contact.email}:`, err.message);
-        await supabase
+        await supabaseService
           .from("campaign_contacts")
           .update({ status: "failed" })
           .eq("id", contact.id);
@@ -87,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Update campaign stats
-    await supabase.from("campaigns").update({
+    await supabaseService.from("campaigns").update({
       status: "sent",
       sent_at: new Date().toISOString(),
       sent_count: (campaign.sent_count || 0) + sentCount,
@@ -103,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error sending campaign:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send campaign" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
