@@ -1,9 +1,77 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MessageSquare, MapPin, Clock, Users } from "lucide-react";
+import { Phone, Mail, MessageSquare, MapPin, Clock, Users, Loader2, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const ContactSection = () => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    businessName: "",
+    phone: "",
+    email: "",
+    serviceAddress: "",
+    speedRequirements: "",
+    comments: "",
+  });
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.firstName || !formData.lastName || !formData.businessName || !formData.phone || !formData.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke("send-contact-email", {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+      toast({
+        title: "Quote Request Sent!",
+        description: "We'll get back to you within 1 business day.",
+      });
+    } catch {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or call us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact-form" className="py-20 bg-gradient-primary">
       <div className="container mx-auto px-4">
@@ -32,113 +100,151 @@ const ContactSection = () => {
               </p>
             </CardHeader>
             <CardContent>
-              <form className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
+              {isSubmitted ? (
+                <div className="text-center py-12 space-y-4">
+                  <CheckCircle className="h-16 w-16 text-[hsl(var(--success))] mx-auto" />
+                  <h3 className="text-2xl font-bold text-foreground">Thank You!</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Your quote request has been submitted. A specialist will contact you within 1 business day.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsSubmitted(false);
+                      setFormData({
+                        firstName: "", lastName: "", businessName: "", phone: "",
+                        email: "", serviceAddress: "", speedRequirements: "", comments: "",
+                      });
+                    }}
+                  >
+                    Submit Another Request
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">First Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.firstName}
+                        onChange={(e) => handleChange("firstName", e.target.value)}
+                        maxLength={100}
+                        className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">Last Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.lastName}
+                        onChange={(e) => handleChange("lastName", e.target.value)}
+                        maxLength={100}
+                        className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="Smith"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      First Name *
-                    </label>
-                    <input 
-                      type="text" 
+                    <label className="block text-sm font-medium text-foreground mb-2">Business Name *</label>
+                    <input
+                      type="text"
                       required
+                      value={formData.businessName}
+                      onChange={(e) => handleChange("businessName", e.target.value)}
+                      maxLength={200}
                       className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      placeholder="John"
+                      placeholder="Your Business Name"
                     />
                   </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">Phone Number *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => handleChange("phone", e.target.value)}
+                        maxLength={20}
+                        className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="(555) 123-4567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => handleChange("email", e.target.value)}
+                        maxLength={255}
+                        className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                        placeholder="john@business.com"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Last Name *
-                    </label>
-                    <input 
-                      type="text" 
-                      required
+                    <label className="block text-sm font-medium text-foreground mb-2">Service Address</label>
+                    <input
+                      type="text"
+                      value={formData.serviceAddress}
+                      onChange={(e) => handleChange("serviceAddress", e.target.value)}
+                      maxLength={300}
                       className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      placeholder="Smith"
+                      placeholder="123 Business Ave, City, State, ZIP"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Business Name *
-                  </label>
-                  <input 
-                    type="text" 
-                    required
-                    className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="Your Business Name"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Phone Number *
-                    </label>
-                    <input 
-                      type="tel" 
-                      required
+                    <label className="block text-sm font-medium text-foreground mb-2">Internet Speed Requirements</label>
+                    <select
+                      value={formData.speedRequirements}
+                      onChange={(e) => handleChange("speedRequirements", e.target.value)}
                       className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      placeholder="(555) 123-4567"
+                    >
+                      <option value="">Select your speed needs</option>
+                      <option>Up to 100 Mbps - Small office (1-10 employees)</option>
+                      <option>100-400 Mbps - Medium business (10-50 employees)</option>
+                      <option>400 Mbps - 1 Gig - Large business (50+ employees)</option>
+                      <option>1 Gig+ - Enterprise level requirements</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Additional Comments</label>
+                    <textarea
+                      rows={4}
+                      value={formData.comments}
+                      onChange={(e) => handleChange("comments", e.target.value)}
+                      maxLength={1000}
+                      className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+                      placeholder="Tell us about your business needs, current challenges, or specific requirements..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Email Address *
-                    </label>
-                    <input 
-                      type="email" 
-                      required
-                      className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                      placeholder="john@business.com"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Service Address
-                  </label>
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="123 Business Ave, City, State, ZIP"
-                  />
-                </div>
+                  <Button variant="cta" className="w-full py-4 text-lg font-semibold" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Get My Free Quote Now"
+                    )}
+                  </Button>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Internet Speed Requirements
-                  </label>
-                  <select className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
-                    <option>Select your speed needs</option>
-                    <option>Up to 100 Mbps - Small office (1-10 employees)</option>
-                    <option>100-400 Mbps - Medium business (10-50 employees)</option>
-                    <option>400 Mbps - 1 Gig - Large business (50+ employees)</option>
-                    <option>1 Gig+ - Enterprise level requirements</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Additional Comments
-                  </label>
-                  <textarea 
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
-                    placeholder="Tell us about your business needs, current challenges, or specific requirements..."
-                  />
-                </div>
-
-                <Button variant="cta" className="w-full py-4 text-lg font-semibold">
-                  Get My Free Quote Now
-                </Button>
-
-                <p className="text-sm text-muted-foreground text-center">
-                  By submitting this form, you agree to be contacted by Spectrum Business 
-                  regarding internet services for your business.
-                </p>
-              </form>
+                  <p className="text-sm text-muted-foreground text-center">
+                    By submitting this form, you agree to be contacted by Business Internet Express
+                    regarding internet services for your business.
+                  </p>
+                </form>
+              )}
             </CardContent>
           </Card>
 
@@ -171,7 +277,7 @@ const ContactSection = () => {
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Email Support</h4>
                       <p className="text-lg font-medium text-primary mb-2">
-                        business@spectrum.com
+                        service@businessinternetexpress.com
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Business inquiries and support
@@ -197,7 +303,6 @@ const ContactSection = () => {
               </CardContent>
             </Card>
 
-            {/* Business Hours & Guarantees */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card className="shadow-medium">
                 <CardContent className="p-6 text-center">
@@ -224,7 +329,6 @@ const ContactSection = () => {
               </Card>
             </div>
 
-            {/* Service Area */}
             <Card className="shadow-medium bg-gradient-card">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
