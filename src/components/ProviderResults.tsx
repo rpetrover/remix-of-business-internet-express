@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { type InternetProvider, type InternetPlan } from "@/data/providers";
 import { useCart } from "@/hooks/useCart";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 
 interface ProviderResultsProps {
   address: string;
@@ -212,14 +213,27 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
   const broadbandProviders = otherProviders.filter((p) => !p.dedicatedFiber);
   const dedicatedFiberProviders = otherProviders.filter((p) => p.dedicatedFiber);
 
+  // Lead capture modal state
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<{ plan: InternetPlan; provider: InternetProvider } | null>(null);
+
   const handleSelectPlan = (plan: InternetPlan, provider: InternetProvider) => {
-    addToCart({
-      product_name: `${provider.name} — ${plan.name}`,
-      product_type: "internet",
-      price: parsePrice(plan.price),
-      speed: plan.speed,
-      features: plan.features,
-    });
+    // Show lead capture modal first
+    setPendingPlan({ plan, provider });
+    setLeadModalOpen(true);
+  };
+
+  const handleLeadContinue = (leadData: { email: string; phone: string; name: string }) => {
+    setLeadModalOpen(false);
+    if (pendingPlan) {
+      addToCart({
+        product_name: `${pendingPlan.provider.name} — ${pendingPlan.plan.name}`,
+        product_type: "internet",
+        price: parsePrice(pendingPlan.plan.price),
+        speed: pendingPlan.plan.speed,
+        features: pendingPlan.plan.features,
+      });
+    }
   };
 
   const openChat = () => {
@@ -331,6 +345,16 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
             </div>
           </CardContent>
         </Card>
+        {/* Lead Capture Modal */}
+        <LeadCaptureModal
+          open={leadModalOpen}
+          onOpenChange={setLeadModalOpen}
+          planName={pendingPlan?.plan.name || ""}
+          providerName={pendingPlan?.provider.name || ""}
+          price={pendingPlan ? parsePrice(pendingPlan.plan.price) : 0}
+          speed={pendingPlan?.plan.speed}
+          onContinue={handleLeadContinue}
+        />
       </div>
     </section>
   );
