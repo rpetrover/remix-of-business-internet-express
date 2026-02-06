@@ -20,7 +20,7 @@ const SupportPage = () => {
       title: "Live Chat",
       description: "Get instant help through live chat",
       contact: "Chat Now",
-      availability: "Monday-Friday, 8am-11pm ET",
+      availability: "24/7 — 365 days a year",
       features: ["Real-time support", "Screen sharing", "Quick solutions"]
     },
     {
@@ -69,10 +69,10 @@ const SupportPage = () => {
   ];
 
   const businessHours = [
-    { department: "Sales", hours: "Monday-Friday, 8am-11pm ET", phone: "(855) 707-7328" },
-    { department: "Technical Support", hours: "24/7", phone: "(855) 757-7328" },
-    { department: "Billing", hours: "Monday-Friday, 8am-8pm ET", phone: "(855) 757-7328" },
-    { department: "Enterprise Sales", hours: "Monday-Friday, 8am-6pm ET", phone: "(855) 499-9243" }
+    { department: "Sales", hours: "24/7 — AI-Powered", phone: "1-888-230-FAST" },
+    { department: "Technical Support", hours: "24/7 — AI-Powered", phone: "1-888-230-FAST" },
+    { department: "Billing", hours: "24/7 — AI-Powered", phone: "1-888-230-FAST" },
+    { department: "Enterprise Sales", hours: "24/7 — AI-Powered", phone: "1-888-230-FAST" }
   ];
 
   const resources = [
