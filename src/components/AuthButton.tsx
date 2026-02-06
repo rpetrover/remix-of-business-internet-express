@@ -23,18 +23,28 @@ const AuthButton = () => {
   }, []);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Signed Out",
-        description: "You have been successfully signed out"
-      });
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) {
+        console.error('Sign out error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Signed Out",
+          description: "You have been successfully signed out"
+        });
+        // Force reload to clear all cached state
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error('Sign out exception:', err);
+      // Force sign out even on error
+      localStorage.clear();
+      window.location.href = '/';
     }
   };
 
