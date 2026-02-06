@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import SpectrumResults from "@/components/SpectrumResults";
 import AlternativeResults from "@/components/AlternativeResults";
 import { useToast } from "@/hooks/use-toast";
-import { checkSpectrumAvailability } from "@/data/providers";
+import { checkSpectrumAvailability, getAvailableProviders, type InternetProvider } from "@/data/providers";
 
 type ResultType = "spectrum" | "alternative" | null;
 
@@ -25,6 +25,7 @@ const CheckAvailabilityPage = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [resultType, setResultType] = useState<ResultType>(null);
   const [checkedAddress, setCheckedAddress] = useState("");
+  const [availableProviders, setAvailableProviders] = useState<InternetProvider[]>([]);
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
@@ -64,8 +65,10 @@ const CheckAvailabilityPage = () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
+    const altProviders = getAvailableProviders(formData.zipCode);
     const fullAddress = getFullAddress();
     setCheckedAddress(fullAddress);
+    setAvailableProviders(altProviders);
 
     if (isSpectrumAvailable) {
       setResultType("spectrum");
@@ -77,7 +80,9 @@ const CheckAvailabilityPage = () => {
       setResultType("alternative");
       toast({
         title: "Spectrum Not Available",
-        description: "We found other internet providers for your area.",
+        description: altProviders.length > 0
+          ? `We found ${altProviders.length} other provider${altProviders.length !== 1 ? "s" : ""} for your area.`
+          : "Contact us for help finding service in your area.",
       });
     }
 
@@ -217,7 +222,7 @@ const CheckAvailabilityPage = () => {
 
       {/* Results */}
       {resultType === "spectrum" && <SpectrumResults address={checkedAddress} />}
-      {resultType === "alternative" && <AlternativeResults address={checkedAddress} />}
+      {resultType === "alternative" && <AlternativeResults address={checkedAddress} availableProviders={availableProviders} />}
 
       <Footer />
     </div>

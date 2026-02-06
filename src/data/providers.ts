@@ -13,6 +13,9 @@ export interface InternetProvider {
   description: string;
   technology: string;
   plans: InternetPlan[];
+  /** If true, available everywhere (e.g. satellite) */
+  nationwide?: boolean;
+  serviceableZipPrefixes?: string[];
 }
 
 export const spectrumPlans: InternetPlan[] = [
@@ -61,6 +64,7 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Viasat",
     description: "Satellite internet available virtually everywhere — ideal for rural and remote business locations.",
     technology: "Satellite",
+    nationwide: true,
     plans: [
       {
         name: "Viasat Business 25",
@@ -88,6 +92,48 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Frontier Internet",
     description: "Fiber and DSL internet options for businesses with competitive pricing.",
     technology: "Fiber / DSL",
+    // Frontier serves: CT, WV, IN, IL, OH, WI, MN, CA, FL, TX, AZ, NV, NM, UT and others
+    serviceableZipPrefixes: [
+      // Connecticut
+      "060", "061", "062", "063", "064", "065", "066", "067", "068", "069",
+      // West Virginia
+      "247", "248", "249", "250", "251", "252", "253", "254", "255", "256",
+      "257", "258", "259", "260", "261", "262", "263", "264", "265", "266",
+      // Indiana
+      "460", "461", "462", "463", "464", "465", "466", "467", "468", "469",
+      "470", "471", "472", "473", "474", "475", "476", "477", "478", "479",
+      // Illinois
+      "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
+      "610", "611", "612", "613", "614", "615", "616", "617", "618", "619",
+      // Ohio
+      "430", "431", "432", "433", "434", "435", "436", "437", "438", "439",
+      "440", "441", "442", "443", "444", "445", "446", "447", "448", "449",
+      // Wisconsin
+      "530", "531", "532", "534", "535", "537", "538", "539",
+      // Minnesota
+      "550", "551", "553", "554", "556", "557", "558", "559",
+      // California (partial — mainly inland/rural areas)
+      "930", "931", "932", "933", "934", "935", "936", "937", "938", "939",
+      "950", "951", "952", "953", "954", "955", "956", "957", "958", "959",
+      // Florida (partial)
+      "320", "321", "322", "323", "324", "325", "326", "327", "328", "329",
+      "340", "341", "342", "344",
+      // Texas (partial — Dallas, Fort Worth, parts of East TX)
+      "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
+      "760", "761", "762", "763", "764", "765", "766", "767", "768", "769",
+      // Arizona
+      "850", "851", "852", "853", "855", "856", "857",
+      // Nevada
+      "889", "890", "891", "893", "894", "895",
+      // New Mexico
+      "870", "871", "872", "873", "874", "875", "877",
+      // Utah
+      "840", "841", "842", "843", "844", "845", "846", "847",
+      // New York (upstate — Rochester, Buffalo, etc.)
+      "140", "141", "142", "143", "144", "145", "146", "147", "148", "149",
+      // Pennsylvania (partial)
+      "150", "151", "152", "153", "154", "155", "156", "157", "158", "159",
+    ],
     plans: [
       {
         name: "Business Fiber 500",
@@ -115,6 +161,21 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Natural Wireless",
     description: "Fixed wireless broadband for businesses in underserved areas with reliable connectivity.",
     technology: "Fixed Wireless",
+    // Natural Wireless operates regionally — primarily in parts of NY, NJ, PA, and surrounding areas
+    serviceableZipPrefixes: [
+      // New York metro & Hudson Valley
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+      "120", "121", "122", "123", "124", "125", "126", "127", "128", "129",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // Pennsylvania (eastern)
+      "180", "181", "182", "183", "184", "185", "186", "187", "188", "189",
+      "190", "191", "192", "193", "194", "195", "196",
+      // Connecticut
+      "060", "061", "062", "063", "064", "065", "066", "067", "068", "069",
+    ],
     plans: [
       {
         name: "Business Basic",
@@ -142,6 +203,71 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Comcast Business",
     description: "Xfinity Business internet with a range of speeds and business-grade features.",
     technology: "Cable / Fiber",
+    // Comcast/Xfinity serves large parts of: CA, CO, CT, DE, FL, GA, IL, IN, KS, KY, MA, MD, ME, MI, MN, MO, MS, NH, NJ, NM, OR, PA, SC, TN, TX, UT, VA, VT, WA, WI
+    serviceableZipPrefixes: [
+      // California (Bay Area, Sacramento, Central Coast)
+      "900", "901", "902", "903", "904", "905", "906", "907", "908", "909",
+      "910", "911", "912", "913", "914", "915", "916", "917", "918", "919",
+      "920", "921", "922", "923", "924", "925", "926", "927", "928",
+      "940", "941", "942", "943", "944", "945", "946", "947", "948", "949",
+      "950", "951",
+      // Colorado
+      "800", "801", "802", "803", "804", "805", "806", "807", "808", "809",
+      // Connecticut
+      "060", "061", "062", "063", "064", "065", "066", "067", "068", "069",
+      // Delaware
+      "197", "198", "199",
+      // Florida (parts)
+      "320", "321", "322", "323", "324", "325", "326", "327", "328", "329",
+      "330", "331", "332", "333", "334", "335", "336", "337", "338", "339",
+      // Georgia
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      // Illinois
+      "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
+      "610", "611", "612", "613", "614", "615", "616",
+      // Indiana (partial)
+      "460", "461", "462", "463", "464", "465", "466", "467",
+      // Massachusetts
+      "010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
+      "020", "021", "022", "023", "024", "025", "026", "027",
+      // Maryland
+      "206", "207", "208", "209", "210", "211", "212", "214", "215", "216",
+      // Michigan (partial — Detroit metro)
+      "480", "481", "482", "483", "484", "485", "486", "487", "488", "489",
+      // Minnesota (Twin Cities)
+      "550", "551", "553", "554", "555",
+      // New Hampshire
+      "030", "031", "032", "033", "034", "035", "036", "037", "038",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // New Mexico (Albuquerque)
+      "870", "871",
+      // Oregon
+      "970", "971", "972", "973", "974",
+      // Pennsylvania
+      "150", "151", "152", "153", "154", "155", "156", "157", "158", "159",
+      "160", "161", "162", "163", "164", "165", "166", "167", "168", "169",
+      "170", "171", "172", "173", "174", "175", "176", "177", "178", "179",
+      "180", "181", "182", "183", "184", "185", "186", "187", "188", "189",
+      "190", "191", "192", "193", "194", "195", "196",
+      // South Carolina (partial)
+      "290", "291", "292", "293", "294",
+      // Tennessee (partial)
+      "370", "371", "372", "373",
+      // Texas (Houston metro)
+      "770", "771", "772", "773", "774", "775", "776", "777", "778", "779",
+      // Utah
+      "840", "841", "842", "843", "844", "845",
+      // Virginia (partial)
+      "220", "221", "222", "223", "224", "225", "226", "227",
+      // Vermont
+      "050", "051", "052", "053", "054", "056", "057",
+      // Washington state
+      "980", "981", "982", "983", "984", "985", "986",
+      // Wisconsin (partial)
+      "530", "531", "532", "534", "535",
+    ],
     plans: [
       {
         name: "Business Internet Starter",
@@ -169,6 +295,23 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Optimum Business",
     description: "Business internet with competitive speeds and bundling options in the Northeast.",
     technology: "Cable / Fiber",
+    // Optimum (Altice USA) serves: NY (tristate), NJ, CT, PA (limited), and parts of NC, WV
+    serviceableZipPrefixes: [
+      // New York — Long Island, Westchester, Hudson Valley, NYC boroughs
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085",
+      // Connecticut
+      "060", "061", "062", "063", "064", "065", "066", "067", "068", "069",
+      // Pennsylvania (NE — Scranton/Wilkes-Barre area)
+      "180", "181", "182", "183", "184", "185", "186", "187", "188",
+      // North Carolina (parts — Raleigh/Durham)
+      "270", "271", "272", "273", "274", "275", "276", "277",
+      // West Virginia (eastern panhandle)
+      "254", "255", "256", "257", "258",
+    ],
     plans: [
       {
         name: "Business Internet 300",
@@ -196,6 +339,33 @@ export const alternativeProviders: InternetProvider[] = [
     name: "Verizon Business",
     description: "Fios business internet with symmetrical upload and download speeds on a 100% fiber network.",
     technology: "Fiber",
+    // Verizon Fios serves: parts of NY, NJ, CT, PA, MD, DC, VA, MA, RI, DE
+    serviceableZipPrefixes: [
+      // New York City & suburbs
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117",
+      // New Jersey (extensive coverage)
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // Connecticut (partial — Fairfield County)
+      "060", "061", "068", "069",
+      // Pennsylvania (Philly metro)
+      "190", "191", "192", "193", "194", "195", "196",
+      // Maryland
+      "206", "207", "208", "209", "210", "211", "212", "214",
+      // DC
+      "200", "201", "202", "203", "204", "205",
+      // Virginia (Northern VA, Hampton Roads)
+      "220", "221", "222", "223", "224", "225", "226", "227", "228", "229",
+      "230", "231", "232", "233", "234", "235", "236",
+      // Massachusetts (Boston metro)
+      "010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
+      "020", "021", "022", "023", "024",
+      // Rhode Island
+      "028", "029",
+      // Delaware
+      "197", "198", "199",
+    ],
     plans: [
       {
         name: "Fios Business 300",
@@ -220,20 +390,9 @@ export const alternativeProviders: InternetProvider[] = [
   },
 ];
 
-// Spectrum Business serviceable states (Spectrum covers these states fully or partially)
-// Source: Spectrum serves 42 states as of 2025
-export const spectrumServiceableStates = [
-  "AL", "AZ", "CA", "CO", "CT", "FL", "GA", "HI", "ID", "IL",
-  "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO",
-  "MS", "MT", "NC", "NE", "NH", "NJ", "NM", "NV", "NY", "OH",
-  "OR", "PA", "SC", "SD", "TN", "TX", "VA", "VT", "WA", "WI",
-  "WV", "WY",
-];
-
-// Common Spectrum-serviceable zip code prefixes (first 3 digits)
-// This is an approximation - for production, you'd want a full database
+// Spectrum Business serviceable zip code prefixes (first 3 digits)
 export const spectrumServiceableZipPrefixes = [
-  // New York metro
+  // New York
   "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
   "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
   "120", "121", "122", "123", "124", "125", "126", "127", "128", "129",
@@ -245,8 +404,7 @@ export const spectrumServiceableZipPrefixes = [
   "920", "921", "922", "923", "924", "925", "926", "927", "928", "930",
   "931", "932", "933", "934", "935", "936", "937", "938", "939", "940",
   "941", "942", "943", "944", "945", "946", "947", "948", "949", "950",
-  "951", "952", "953", "954", "955", "956", "957", "958", "959", "960",
-  "961",
+  "951", "952", "953", "954", "955", "956", "957", "958", "959", "960", "961",
   // Texas
   "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
   "760", "761", "762", "763", "764", "765", "766", "767", "768", "769",
@@ -297,25 +455,21 @@ export const spectrumServiceableZipPrefixes = [
   "800", "801", "802", "803", "804", "805", "806", "807", "808", "809",
   "810", "811", "812", "813", "814", "815", "816",
   // Louisiana
-  "700", "701", "703", "704", "705", "706", "707", "708", "710", "711",
-  "712", "713", "714",
+  "700", "701", "703", "704", "705", "706", "707", "708", "710", "711", "712", "713", "714",
   // Minnesota
   "550", "551", "553", "554", "555", "556", "557", "558", "559", "560",
   "561", "562", "563", "564", "565", "566", "567",
   // Mississippi
-  "386", "387", "388", "389", "390", "391", "392", "393", "394", "395",
-  "396", "397",
+  "386", "387", "388", "389", "390", "391", "392", "393", "394", "395", "396", "397",
   // Virginia
   "220", "221", "222", "223", "224", "225", "226", "227", "228", "229",
   "230", "231", "232", "233", "234", "235", "236", "237", "238", "239",
   "240", "241", "242", "243", "244", "245", "246",
   // West Virginia
   "247", "248", "249", "250", "251", "252", "253", "254", "255", "256",
-  "257", "258", "259", "260", "261", "262", "263", "264", "265", "266",
-  "267", "268",
+  "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268",
   // Washington state
-  "980", "981", "982", "983", "984", "985", "986", "988", "989", "990",
-  "991", "992", "993", "994",
+  "980", "981", "982", "983", "984", "985", "986", "988", "989", "990", "991", "992", "993", "994",
   // Oregon
   "970", "971", "972", "973", "974", "975", "976", "977", "978", "979",
   // Pennsylvania
@@ -331,13 +485,11 @@ export const spectrumServiceableZipPrefixes = [
   "480", "481", "482", "483", "484", "485", "486", "487", "488", "489",
   "490", "491", "492", "493", "494", "495", "496", "497", "498", "499",
   // Nebraska
-  "680", "681", "683", "684", "685", "686", "687", "688", "689", "690",
-  "691", "692", "693",
+  "680", "681", "683", "684", "685", "686", "687", "688", "689", "690", "691", "692", "693",
   // Hawaii
   "967", "968",
   // Arizona
-  "850", "851", "852", "853", "855", "856", "857", "859", "860", "863",
-  "864", "865",
+  "850", "851", "852", "853", "855", "856", "857", "859", "860", "863", "864", "865",
   // Nevada
   "889", "890", "891", "893", "894", "895", "897", "898",
   // Maine
@@ -347,8 +499,7 @@ export const spectrumServiceableZipPrefixes = [
   // New Hampshire
   "030", "031", "032", "033", "034", "035", "036", "037", "038",
   // Maryland
-  "206", "207", "208", "209", "210", "211", "212", "214", "215", "216",
-  "217", "218", "219",
+  "206", "207", "208", "209", "210", "211", "212", "214", "215", "216", "217", "218", "219",
   // Kansas
   "660", "661", "662", "664", "665", "666", "667", "668", "669", "670",
   "671", "672", "673", "674", "675", "676", "677", "678", "679",
@@ -361,15 +512,30 @@ export const spectrumServiceableZipPrefixes = [
   // Wyoming
   "820", "821", "822", "823", "824", "825", "826", "827", "828", "829", "831",
   // New Mexico
-  "870", "871", "872", "873", "874", "875", "877", "878", "879", "880",
-  "881", "882", "883", "884",
+  "870", "871", "872", "873", "874", "875", "877", "878", "879", "880", "881", "882", "883", "884",
   // Illinois
   "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
   "610", "611", "612", "613", "614", "615", "616", "617", "618", "619",
   "620", "622", "623", "624", "625", "626", "627", "628", "629",
 ];
 
+/** Check if Spectrum services a given zip code */
 export function checkSpectrumAvailability(zipCode: string): boolean {
   const prefix = zipCode.substring(0, 3);
   return spectrumServiceableZipPrefixes.includes(prefix);
+}
+
+/** Check if a specific alternative provider services a given zip code */
+export function checkProviderAvailability(provider: InternetProvider, zipCode: string): boolean {
+  if (provider.nationwide) return true;
+  if (!provider.serviceableZipPrefixes) return false;
+  const prefix = zipCode.substring(0, 3);
+  return provider.serviceableZipPrefixes.includes(prefix);
+}
+
+/** Get all available alternative providers for a zip code */
+export function getAvailableProviders(zipCode: string): InternetProvider[] {
+  return alternativeProviders.filter((provider) =>
+    checkProviderAvailability(provider, zipCode)
+  );
 }

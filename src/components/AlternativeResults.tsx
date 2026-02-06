@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Phone, Star, ChevronDown, ChevronUp, Globe } from "lucide-react";
-import { alternativeProviders, type InternetProvider } from "@/data/providers";
+import { CheckCircle, XCircle, Phone, Star, ChevronDown, ChevronUp, Globe, AlertTriangle } from "lucide-react";
+import { type InternetProvider } from "@/data/providers";
 
 interface AlternativeResultsProps {
   address: string;
+  availableProviders: InternetProvider[];
 }
 
 const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
@@ -24,7 +25,14 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
               <Globe className="h-5 w-5 text-primary" />
               {provider.name}
             </CardTitle>
-            <Badge variant="secondary" className="mt-2">{provider.technology}</Badge>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary">{provider.technology}</Badge>
+              {provider.nationwide && (
+                <Badge variant="outline" className="text-primary border-primary">
+                  Available Nationwide
+                </Badge>
+              )}
+            </div>
           </div>
           <Button variant="ghost" size="icon">
             {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -84,7 +92,9 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
   );
 };
 
-const AlternativeResults = ({ address }: AlternativeResultsProps) => {
+const AlternativeResults = ({ address, availableProviders }: AlternativeResultsProps) => {
+  const hasProviders = availableProviders.length > 0;
+
   return (
     <section className="py-16 bg-secondary/30 animate-in fade-in duration-500">
       <div className="container mx-auto px-4">
@@ -99,20 +109,44 @@ const AlternativeResults = ({ address }: AlternativeResultsProps) => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
             Unfortunately, Spectrum Business doesn't service <span className="font-semibold text-foreground">{address}</span> yet.
           </p>
-          <p className="text-lg text-primary font-semibold">
-            But don't worry — we have other great options for your business!
-          </p>
+          {hasProviders ? (
+            <p className="text-lg text-primary font-semibold">
+              We found {availableProviders.length} other provider{availableProviders.length !== 1 ? "s" : ""} available in your area!
+            </p>
+          ) : (
+            <p className="text-lg text-muted-foreground">
+              Contact us for help finding internet service in your area.
+            </p>
+          )}
         </div>
 
-        {/* Alternative Providers */}
-        <div className="max-w-5xl mx-auto space-y-4 mb-12">
-          <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
-            Available Internet Providers
-          </h3>
-          {alternativeProviders.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} />
-          ))}
-        </div>
+        {/* Available Alternative Providers */}
+        {hasProviders && (
+          <div className="max-w-5xl mx-auto space-y-4 mb-12">
+            <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
+              Available Internet Providers in Your Area
+            </h3>
+            {availableProviders.map((provider) => (
+              <ProviderCard key={provider.id} provider={provider} />
+            ))}
+          </div>
+        )}
+
+        {/* No providers message */}
+        {!hasProviders && (
+          <div className="max-w-2xl mx-auto mb-12">
+            <Card className="text-center border-dashed">
+              <CardHeader>
+                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <CardTitle className="text-xl">Limited Coverage Area</CardTitle>
+                <p className="text-muted-foreground">
+                  Our standard provider partners don't currently show coverage for your ZIP code. 
+                  Contact us and we'll research additional options for your location.
+                </p>
+              </CardHeader>
+            </Card>
+          </div>
+        )}
 
         {/* Help CTA */}
         <Card className="max-w-2xl mx-auto text-center">
