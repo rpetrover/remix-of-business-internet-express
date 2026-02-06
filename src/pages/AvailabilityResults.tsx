@@ -2,12 +2,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SpectrumResults from "@/components/SpectrumResults";
+import ProviderResults from "@/components/ProviderResults";
+import { type InternetProvider } from "@/data/providers";
 
-const AvailabilitySuccess = () => {
+const AvailabilityResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const address = location.state?.address as string | undefined;
+  const allProviders = (location.state?.allProviders ?? []) as InternetProvider[];
+  const spectrumAvailable = (location.state?.spectrumAvailable ?? false) as boolean;
 
   useEffect(() => {
     if (!address) {
@@ -21,11 +24,15 @@ const AvailabilitySuccess = () => {
     <div className="min-h-screen">
       <Header />
       <div className="pt-16">
-        <SpectrumResults address={address} />
+        <ProviderResults
+          address={address}
+          allProviders={allProviders}
+          spectrumAvailable={spectrumAvailable}
+        />
       </div>
       <Footer />
     </div>
   );
 };
 
-export default AvailabilitySuccess;
+export default AvailabilityResults;

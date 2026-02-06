@@ -519,13 +519,23 @@ export const spectrumServiceableZipPrefixes = [
   "620", "622", "623", "624", "625", "626", "627", "628", "629",
 ];
 
+/** The Spectrum provider object — treated like any other provider but flagged as preferred */
+export const spectrumProvider: InternetProvider = {
+  id: "spectrum",
+  name: "Spectrum Business",
+  description: "Fast, reliable cable internet with no data caps, free modem, and 24/7 U.S.-based support.",
+  technology: "Cable / Fiber",
+  serviceableZipPrefixes: spectrumServiceableZipPrefixes,
+  plans: spectrumPlans,
+};
+
 /** Check if Spectrum services a given zip code */
 export function checkSpectrumAvailability(zipCode: string): boolean {
   const prefix = zipCode.substring(0, 3);
   return spectrumServiceableZipPrefixes.includes(prefix);
 }
 
-/** Check if a specific alternative provider services a given zip code */
+/** Check if a specific provider services a given zip code */
 export function checkProviderAvailability(provider: InternetProvider, zipCode: string): boolean {
   if (provider.nationwide) return true;
   if (!provider.serviceableZipPrefixes) return false;
@@ -533,9 +543,28 @@ export function checkProviderAvailability(provider: InternetProvider, zipCode: s
   return provider.serviceableZipPrefixes.includes(prefix);
 }
 
-/** Get all available alternative providers for a zip code */
+/** Get all available alternative providers for a zip code (excludes Spectrum) */
 export function getAvailableProviders(zipCode: string): InternetProvider[] {
   return alternativeProviders.filter((provider) =>
     checkProviderAvailability(provider, zipCode)
   );
+}
+
+export interface AvailabilityResult {
+  spectrumAvailable: boolean;
+  allProviders: InternetProvider[];
+}
+
+/** Get ALL available providers for a zip code, with Spectrum first when available */
+export function getAllAvailableProviders(zipCode: string): AvailabilityResult {
+  const spectrumAvailable = checkSpectrumAvailability(zipCode);
+  const otherProviders = getAvailableProviders(zipCode);
+
+  const allProviders: InternetProvider[] = [];
+  if (spectrumAvailable) {
+    allProviders.push(spectrumProvider);
+  }
+  allProviders.push(...otherProviders);
+
+  return { spectrumAvailable, allProviders };
 }

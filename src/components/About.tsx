@@ -11,10 +11,10 @@ const About = () => {
   ];
 
   const benefits = [
-    "Authorized Spectrum Business Partner",
+    "Multiple Provider Options in One Place",
     "Competitive Pricing & Special Offers",
     "Dedicated Account Management",
-    "Local Expert Installation & Support",
+    "Professional Installation & Support",
     "Same-Day Service Calls Available",
     "No Hidden Fees or Contracts"
   ];
@@ -29,12 +29,12 @@ const About = () => {
               About Business Internet Express
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Your Trusted Spectrum Business Partner
+              Your Business Internet Partner
             </h2>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              As an authorized Spectrum Business agent, we've been helping businesses across the region 
-              get connected with reliable, high-speed internet solutions since 2019. Our team of experts 
-              understands the unique connectivity needs of modern businesses.
+              We partner with the top internet service providers to help businesses find 
+              the fastest, most reliable connectivity at the best price. Our team compares 
+              plans from multiple carriers so you don't have to.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -51,9 +51,9 @@ const About = () => {
                 Why Choose Business Internet Express?
               </h3>
               <p className="text-muted-foreground">
-                We're not just another internet provider. We're your local business connectivity 
-                partner, committed to understanding your needs and delivering solutions that help 
-                your business thrive in today's digital landscape.
+                We're not just another internet reseller. We're your local business connectivity 
+                partner, committed to finding the right provider and plan that fits 
+                your budget and performance needs.
               </p>
             </div>
           </div>
@@ -87,8 +87,9 @@ const About = () => {
                   </div>
                 </div>
                 <blockquote className="text-foreground font-medium mb-4">
-                  "Business Internet Express made our transition to Spectrum seamless. Their team 
-                  handled everything from consultation to installation. Excellent service!"
+                  "Business Internet Express found us a plan that was faster AND cheaper 
+                  than what we had before. Their team handled everything from comparing providers 
+                  to scheduling installation. Excellent service!"
                 </blockquote>
                 <div className="text-sm">
                   <div className="font-semibold text-foreground">Sarah Johnson</div>
@@ -97,15 +98,16 @@ const About = () => {
               </CardContent>
             </Card>
 
-            {/* Spectrum Authorization */}
+            {/* Multi-Provider Badge */}
             <Card className="p-6 shadow-medium border-2 border-primary/20">
               <CardContent className="p-0 text-center">
                 <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-foreground mb-2">
-                  Authorized Spectrum Partner
+                  Multi-Provider Partner
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Licensed and certified to sell Spectrum Business solutions with full manufacturer warranty and support.
+                  Authorized to sell plans from Spectrum, Comcast, Frontier, Verizon, 
+                  Optimum, and more — so you always get the best option.
                 </p>
               </CardContent>
             </Card>

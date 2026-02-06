@@ -14,8 +14,8 @@ const Footer = () => {
               Business Internet<span className="text-accent">Express</span>
             </h3>
             <p className="text-primary-foreground/80">
-              Your trusted Spectrum Business Internet partner, delivering reliable 
-              connectivity solutions for businesses of all sizes.
+              Your trusted business internet partner, connecting you with the best 
+              providers and plans for your location and budget.
             </p>
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4" />
@@ -48,7 +48,7 @@ const Footer = () => {
             <nav className="flex flex-col space-y-2">
               <span className="text-primary-foreground/80">Business Internet</span>
               <span className="text-primary-foreground/80">Fiber Connectivity</span>
-              <span className="text-primary-foreground/80">Security Solutions</span>
+              <span className="text-primary-foreground/80">Provider Comparison</span>
               <span className="text-primary-foreground/80">WiFi Management</span>
               <span className="text-primary-foreground/80">Technical Support</span>
             </nav>
@@ -93,7 +93,7 @@ const Footer = () => {
           </div>
           
           <div className="flex items-center gap-6 text-sm text-primary-foreground/80">
-            <span>Authorized Spectrum Business Partner</span>
+            <span>Authorized Multi-Provider Partner</span>
             <span>|</span>
             <a href="#" className="hover:text-accent transition-colors">
               Privacy Policy
@@ -108,9 +108,9 @@ const Footer = () => {
         {/* Disclaimer */}
         <div className="mt-6 pt-6 border-t border-primary-foreground/20">
           <p className="text-xs text-primary-foreground/60 text-center">
-            Business Internet Express is an authorized agent of Spectrum Business. 
-            All Spectrum trademarks and service marks are the property of Charter Communications, Inc. 
-            Pricing and availability subject to change. Service not available in all areas.
+            Business Internet Express is an authorized agent for multiple internet service providers 
+            including Spectrum, Comcast, Frontier, Verizon, and others. All trademarks are the property 
+            of their respective owners. Pricing and availability subject to change. Service not available in all areas.
           </p>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { MapPin, Search, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { checkSpectrumAvailability, getAvailableProviders } from "@/data/providers";
+import { getAllAvailableProviders } from "@/data/providers";
 
 const CheckAvailabilityPage = () => {
   const [formData, setFormData] = useState({
@@ -55,20 +55,18 @@ const CheckAvailabilityPage = () => {
 
     setIsChecking(true);
 
-    // Simulate network delay for UX
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
     const fullAddress = getFullAddress();
+    const result = getAllAvailableProviders(formData.zipCode);
 
-    if (isSpectrumAvailable) {
-      navigate("/availability/success", { state: { address: fullAddress } });
-    } else {
-      const altProviders = getAvailableProviders(formData.zipCode);
-      navigate("/availability/no-coverage", {
-        state: { address: fullAddress, availableProviders: altProviders },
-      });
-    }
+    navigate("/availability/results", {
+      state: {
+        address: fullAddress,
+        allProviders: result.allProviders,
+        spectrumAvailable: result.spectrumAvailable,
+      },
+    });
 
     setIsChecking(false);
   };
@@ -91,7 +89,7 @@ const CheckAvailabilityPage = () => {
               Find the best business internet options for your location
             </p>
             <p className="text-base text-white/70">
-              We partner with multiple providers to ensure your business gets connected
+              We partner with multiple providers to get your business the best deal
             </p>
           </div>
         </div>
@@ -108,7 +106,7 @@ const CheckAvailabilityPage = () => {
                   Enter Your Business Address
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  We'll check Spectrum availability first, then show all options for your area
+                  We'll find the best internet providers available at your address
                 </p>
               </CardHeader>
               <CardContent>
