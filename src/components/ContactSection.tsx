@@ -282,7 +282,7 @@ const ContactSection = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Call Us Now</h4>
-                      <p className="text-2xl font-bold text-primary mb-2">(555) 123-4567</p>
+                      <a href="tel:+18882303278" className="text-2xl font-bold text-primary mb-2 block hover:text-primary/80 transition-colors">1-888-230-FAST</a>
                       <p className="text-sm text-muted-foreground">
                         Speak directly with our business specialists
                       </p>
