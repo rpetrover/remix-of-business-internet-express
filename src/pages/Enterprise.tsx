@@ -49,13 +49,13 @@ const EnterprisePage = () => {
     {
       name: "Ethernet",
       description: "High-speed dedicated Ethernet connections",
-      speeds: "10 Mbps to 10 Gbps",
+      speeds: "10 Mbps to 30 Gbps",
       features: ["Dedicated bandwidth", "Class of Service options", "Flexible terms"]
     },
     {
       name: "Internet",
       description: "Scalable business internet solutions",
-      speeds: "Up to 10 Gbps",
+      speeds: "Up to 30 Gbps",
       features: ["No data caps", "Static IP addresses", "99.9% uptime SLA"]
     },
     {

@@ -119,7 +119,7 @@ const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                <span className="font-medium">Speeds Up to 1 Gbps</span>
+                <span className="font-medium">Speeds Up to 30 Gbps</span>
               </div>
               <div className="flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
