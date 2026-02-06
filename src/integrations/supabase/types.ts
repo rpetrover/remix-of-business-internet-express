@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_checkouts: {
+        Row: {
+          cart_snapshot: Json | null
+          city: string | null
+          converted: boolean
+          converted_at: string | null
+          created_at: string
+          customer_name: string | null
+          email: string
+          follow_up_count: number
+          id: string
+          last_follow_up_at: string | null
+          monthly_price: number | null
+          opted_out: boolean
+          opted_out_at: string | null
+          phone: string | null
+          selected_plan: string | null
+          selected_provider: string | null
+          service_address: string | null
+          speed: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          cart_snapshot?: Json | null
+          city?: string | null
+          converted?: boolean
+          converted_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          email: string
+          follow_up_count?: number
+          id?: string
+          last_follow_up_at?: string | null
+          monthly_price?: number | null
+          opted_out?: boolean
+          opted_out_at?: string | null
+          phone?: string | null
+          selected_plan?: string | null
+          selected_provider?: string | null
+          service_address?: string | null
+          speed?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          cart_snapshot?: Json | null
+          city?: string | null
+          converted?: boolean
+          converted_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          email?: string
+          follow_up_count?: number
+          id?: string
+          last_follow_up_at?: string | null
+          monthly_price?: number | null
+          opted_out?: boolean
+          opted_out_at?: string | null
+          phone?: string | null
+          selected_plan?: string | null
+          selected_provider?: string | null
+          service_address?: string | null
+          speed?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
       campaign_contacts: {
         Row: {
           campaign_id: string
@@ -223,6 +298,53 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_up_actions: {
+        Row: {
+          action_type: string
+          checkout_id: string
+          created_at: string
+          executed_at: string | null
+          id: string
+          response_data: Json | null
+          scheduled_at: string
+          sequence_step: number
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          action_type: string
+          checkout_id: string
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          response_data?: Json | null
+          scheduled_at?: string
+          sequence_step: number
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          action_type?: string
+          checkout_id?: string
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          response_data?: Json | null
+          scheduled_at?: string
+          sequence_step?: number
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_actions_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: false
+            referencedRelation: "abandoned_checkouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           channel: string
@@ -321,6 +443,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      handle_opt_out: { Args: { checkout_email: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
