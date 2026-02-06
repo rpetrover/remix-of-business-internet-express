@@ -18,7 +18,7 @@ export function loadGoogleMapsScript(): Promise<void> {
   loadPromise = new Promise((resolve, reject) => {
     // Use the recommended async loading via importmap
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();

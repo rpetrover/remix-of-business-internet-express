@@ -26,8 +26,8 @@ const AddressAutocomplete = ({
   containerClassName,
   required,
 }: AddressAutocompleteProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { getCurrentLocation, isAvailable } = useGooglePlaces(containerRef, onPlaceSelect);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { getCurrentLocation, isAvailable } = useGooglePlaces(inputRef, onPlaceSelect);
 
   // If Google Maps API key is not configured, fall back to a regular input
   if (!isAvailable) {
@@ -45,14 +45,16 @@ const AddressAutocomplete = ({
 
   return (
     <div className="space-y-2">
-      {/* Google Places autocomplete element will be injected here */}
-      <div
-        ref={containerRef}
-        className={`google-autocomplete-container ${containerClassName || ""}`}
+      <Input
+        ref={inputRef}
+        id={id}
+        defaultValue={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={className}
+        required={required}
+        autoComplete="off"
       />
-
-      {/* Hidden fallback input for form validation */}
-      <input type="hidden" id={id} value={value} required={required} />
 
       {/* Current Location button */}
       <Button
