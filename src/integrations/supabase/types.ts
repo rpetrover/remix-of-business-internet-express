@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_contacts: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_contacts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          body_html: string
+          created_at: string
+          failed_count: number | null
+          id: string
+          name: string
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string
+          subject: string
+          total_recipients: number | null
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          name: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          subject: string
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          subject?: string
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           bundle_components: string[] | null
@@ -56,15 +139,123 @@ export type Database = {
         }
         Relationships: []
       }
+      email_ai_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          mode: string
+          system_prompt: string
+          training_examples: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          mode?: string
+          system_prompt?: string
+          training_examples?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          mode?: string
+          system_prompt?: string
+          training_examples?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emails: {
+        Row: {
+          ai_auto_replied: boolean | null
+          ai_draft: string | null
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          direction: string
+          from_email: string
+          from_name: string | null
+          id: string
+          resend_id: string | null
+          status: string
+          subject: string
+          to_email: string
+          to_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_auto_replied?: boolean | null
+          ai_draft?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction: string
+          from_email: string
+          from_name?: string | null
+          id?: string
+          resend_id?: string | null
+          status?: string
+          subject?: string
+          to_email: string
+          to_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_auto_replied?: boolean | null
+          ai_draft?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction?: string
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          resend_id?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+          to_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -191,6 +382,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
