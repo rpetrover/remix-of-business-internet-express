@@ -1,6 +1,7 @@
 // Google Maps API configuration
-// Uses environment variable for the API key
-export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+// This is a publishable (client-side) API key — safe to include in frontend code.
+// Protect it with HTTP referrer restrictions in Google Cloud Console.
+export const GOOGLE_MAPS_API_KEY = "AIzaSyBS37Bb8FIGRTyadw5yb2CH1KXY_JR8RtY";
 
 let loadPromise: Promise<void> | null = null;
 
