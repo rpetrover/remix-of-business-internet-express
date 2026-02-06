@@ -16,6 +16,8 @@ export interface InternetProvider {
   /** If true, available everywhere (e.g. satellite) */
   nationwide?: boolean;
   serviceableZipPrefixes?: string[];
+  /** Whether this is a dedicated/enterprise fiber provider */
+  dedicatedFiber?: boolean;
 }
 
 export const spectrumPlans: InternetPlan[] = [
@@ -385,6 +387,375 @@ export const alternativeProviders: InternetProvider[] = [
         speed: "940/880 Mbps",
         price: "$119.99",
         features: ["Near-symmetrical speeds", "No data caps", "Premium router", "Priority support", "Static IP included"],
+      },
+    ],
+  },
+  {
+    id: "crown-castle",
+    name: "Crown Castle Fiber",
+    description: "Enterprise-class dedicated fiber internet access with guaranteed bandwidth, low latency, and scalable speeds for mission-critical business applications.",
+    technology: "Dedicated Fiber",
+    dedicatedFiber: true,
+    // Crown Castle fiber footprint covers major metros across ~40 states — focusing on top metro areas
+    serviceableZipPrefixes: [
+      // New York metro
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // Los Angeles / Southern CA
+      "900", "901", "902", "903", "904", "905", "906", "907", "908", "909",
+      "910", "911", "912", "913", "914", "915", "916", "917", "918", "919",
+      // San Francisco / Bay Area
+      "940", "941", "942", "943", "944", "945", "946", "947", "948", "949",
+      "950", "951",
+      // Houston
+      "770", "771", "772", "773", "774", "775", "776", "777", "778", "779",
+      // Dallas / Fort Worth
+      "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
+      "760", "761", "762", "763",
+      // Chicago
+      "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
+      // Philadelphia
+      "190", "191", "192", "193", "194", "195", "196",
+      // Washington DC / Northern VA / MD
+      "200", "201", "202", "203", "204", "205",
+      "206", "207", "208", "209", "210", "211", "212",
+      "220", "221", "222", "223", "224", "225",
+      // Atlanta
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      // Boston
+      "010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
+      "020", "021", "022", "023", "024",
+      // Denver
+      "800", "801", "802", "803", "804", "805",
+      // Charlotte
+      "280", "281", "282", "283", "284",
+      // Minneapolis
+      "550", "551", "553", "554", "555",
+      // Phoenix
+      "850", "851", "852", "853",
+      // Seattle
+      "980", "981", "982", "983", "984",
+      // Detroit
+      "480", "481", "482", "483", "484", "485",
+    ],
+    plans: [
+      {
+        name: "DIA 100",
+        speed: "100 Mbps",
+        price: "$299",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router included",
+        ],
+      },
+      {
+        name: "DIA 500",
+        speed: "500 Mbps",
+        price: "$599",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router included",
+          "Static IP block",
+        ],
+        recommended: true,
+      },
+      {
+        name: "DIA 1 Gig",
+        speed: "1 Gbps",
+        price: "$899",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router included",
+          "Static IP block",
+          "Proactive fault detection",
+        ],
+      },
+      {
+        name: "DIA 10 Gig",
+        speed: "10 Gbps",
+        price: "Custom",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Fully managed service",
+          "Large IP block",
+          "Dedicated account team",
+        ],
+      },
+    ],
+  },
+  {
+    id: "lumen",
+    name: "Lumen (CenturyLink)",
+    description: "Enterprise-grade dedicated internet access on one of the world's largest fiber networks, with 450,000+ route miles and connections to 6,500+ third-party data centers.",
+    technology: "Dedicated Fiber",
+    dedicatedFiber: true,
+    // Lumen has one of the largest fiber footprints in the US — legacy CenturyLink + Level 3
+    serviceableZipPrefixes: [
+      // New York metro
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // Los Angeles / Southern CA
+      "900", "901", "902", "903", "904", "905", "906", "907", "908", "909",
+      "910", "911", "912", "913", "914", "915", "916", "917", "918", "919",
+      "920", "921", "922", "923", "924", "925",
+      // San Francisco / Bay Area
+      "940", "941", "942", "943", "944", "945", "946", "947", "948", "949",
+      "950", "951",
+      // Houston
+      "770", "771", "772", "773", "774", "775", "776", "777", "778", "779",
+      // Dallas / Fort Worth
+      "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
+      "760", "761", "762", "763", "764", "765",
+      // Chicago
+      "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
+      "610", "611", "612", "613", "614",
+      // Philadelphia
+      "190", "191", "192", "193", "194", "195", "196",
+      // Washington DC / Northern VA / MD
+      "200", "201", "202", "203", "204", "205",
+      "206", "207", "208", "209", "210", "211", "212", "214",
+      "220", "221", "222", "223", "224", "225", "226", "227",
+      // Atlanta
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      // Boston
+      "010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
+      "020", "021", "022", "023", "024",
+      // Denver / Colorado
+      "800", "801", "802", "803", "804", "805", "806", "807", "808", "809",
+      // Phoenix / Arizona
+      "850", "851", "852", "853", "855", "856", "857",
+      // Seattle / Washington
+      "980", "981", "982", "983", "984", "985", "986",
+      // Minneapolis / Minnesota
+      "550", "551", "553", "554", "555", "556", "557",
+      // Detroit / Michigan
+      "480", "481", "482", "483", "484", "485", "486", "487", "488", "489",
+      // Portland / Oregon
+      "970", "971", "972", "973", "974",
+      // Charlotte / NC
+      "280", "281", "282", "283", "284", "285",
+      // Tampa / Florida
+      "330", "331", "332", "333", "334", "335", "336", "337", "338", "339",
+      // Ohio — Columbus, Cleveland, Cincinnati
+      "430", "431", "432", "433", "434", "435",
+      "440", "441", "442", "443", "444", "445",
+      "450", "451", "452", "453",
+      // Missouri — St. Louis, Kansas City
+      "630", "631", "633", "634", "635", "636",
+      "640", "641", "644", "645",
+      // Indiana — Indianapolis
+      "460", "461", "462", "463", "464", "465", "466", "467",
+      // Connecticut
+      "060", "061", "062", "063", "064", "065", "066", "067", "068", "069",
+      // Utah — Salt Lake City
+      "840", "841", "842", "843", "844",
+      // Nevada — Las Vegas
+      "889", "890", "891", "893",
+      // Tennessee — Nashville
+      "370", "371", "372", "373",
+      // Louisiana — New Orleans, Baton Rouge
+      "700", "701", "703", "704", "705", "706", "707", "708",
+      // Wisconsin — Milwaukee
+      "530", "531", "532",
+      // Alabama — Birmingham
+      "350", "351", "352",
+      // Nebraska — Omaha
+      "680", "681", "683",
+      // Kansas — Kansas City area
+      "660", "661", "662",
+    ],
+    plans: [
+      {
+        name: "DIA 50",
+        speed: "50 Mbps",
+        price: "$249",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.95% uptime SLA",
+          "24/7 tech support",
+          "IPv4 & IPv6 support",
+        ],
+      },
+      {
+        name: "DIA 200",
+        speed: "200 Mbps",
+        price: "$449",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router option",
+          "Static IP block",
+        ],
+      },
+      {
+        name: "DIA 1 Gig",
+        speed: "1 Gbps",
+        price: "$799",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router included",
+          "Static IP block",
+          "DDoS mitigation included",
+        ],
+        recommended: true,
+      },
+      {
+        name: "DIA 10 Gig",
+        speed: "10 Gbps",
+        price: "Custom",
+        features: [
+          "Dedicated symmetrical bandwidth",
+          "99.999% uptime SLA",
+          "Proactive network monitoring",
+          "Fully managed CPE",
+          "Enterprise DDoS protection",
+          "Dedicated account team",
+        ],
+      },
+    ],
+  },
+  {
+    id: "zayo",
+    name: "Zayo Group",
+    description: "One of the largest independent fiber providers with 17+ million fiber miles, offering dedicated internet, dark fiber, and wavelength services for businesses of all sizes.",
+    technology: "Dedicated Fiber / Dark Fiber",
+    dedicatedFiber: true,
+    // Zayo has extensive metro and long-haul fiber across 50+ US markets
+    serviceableZipPrefixes: [
+      // New York metro
+      "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
+      "110", "111", "112", "113", "114", "115", "116", "117", "118", "119",
+      // New Jersey
+      "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+      "080", "081", "082", "083", "084", "085", "086", "087", "088", "089",
+      // Los Angeles / Southern CA
+      "900", "901", "902", "903", "904", "905", "906", "907", "908", "909",
+      "910", "911", "912", "913", "914", "915", "916", "917", "918", "919",
+      // San Francisco / Bay Area
+      "940", "941", "942", "943", "944", "945", "946", "947", "948", "949",
+      "950", "951",
+      // Houston
+      "770", "771", "772", "773", "774", "775", "776", "777", "778", "779",
+      // Dallas / Fort Worth
+      "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
+      "760", "761",
+      // Chicago
+      "600", "601", "602", "603", "604", "605", "606", "607", "608", "609",
+      // Philadelphia
+      "190", "191", "192", "193", "194", "195", "196",
+      // Washington DC / Northern VA / MD
+      "200", "201", "202", "203", "204", "205",
+      "206", "207", "208", "209", "210", "211", "212",
+      "220", "221", "222", "223", "224", "225",
+      // Atlanta
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      // Boston
+      "010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
+      "020", "021", "022", "023", "024",
+      // Denver / Boulder (Zayo HQ area)
+      "800", "801", "802", "803", "804", "805", "806", "807", "808", "809",
+      // Phoenix
+      "850", "851", "852", "853",
+      // Seattle
+      "980", "981", "982", "983", "984", "985",
+      // Minneapolis
+      "550", "551", "553", "554", "555",
+      // Detroit
+      "480", "481", "482", "483", "484", "485",
+      // Portland
+      "970", "971", "972", "973",
+      // Charlotte
+      "280", "281", "282", "283",
+      // Tampa / Miami / FL
+      "330", "331", "332", "333", "334", "335",
+      // Ohio — Columbus, Cleveland
+      "430", "431", "432", "433", "434",
+      "440", "441", "442", "443", "444",
+      // Indianapolis
+      "460", "461", "462", "463", "464", "465",
+      // Connecticut
+      "060", "061", "062", "063", "064", "065",
+      // St. Louis
+      "630", "631", "633",
+      // Salt Lake City
+      "840", "841", "842", "843",
+      // Las Vegas
+      "889", "890", "891",
+      // Nashville
+      "370", "371", "372",
+      // Pennsylvania (eastern)
+      "180", "181", "182", "183", "184", "185", "186",
+      // Kansas City
+      "660", "661", "662",
+      // Sacramento
+      "956", "957", "958",
+    ],
+    plans: [
+      {
+        name: "DIA 100",
+        speed: "100 Mbps",
+        price: "$349",
+        features: [
+          "Dedicated symmetrical fiber",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "IPv4 & IPv6 support",
+        ],
+      },
+      {
+        name: "DIA 500",
+        speed: "500 Mbps",
+        price: "$649",
+        features: [
+          "Dedicated symmetrical fiber",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router option",
+          "Static IP block",
+        ],
+        recommended: true,
+      },
+      {
+        name: "DIA 1 Gig",
+        speed: "1 Gbps",
+        price: "$949",
+        features: [
+          "Dedicated symmetrical fiber",
+          "99.99% uptime SLA",
+          "24/7 NOC monitoring",
+          "Managed router included",
+          "Static IP block",
+          "DDoS mitigation",
+        ],
+      },
+      {
+        name: "Dark Fiber",
+        speed: "Unlimited",
+        price: "Custom",
+        features: [
+          "Unlit fiber pairs for your own equipment",
+          "Full control over bandwidth",
+          "Long-term lease options",
+          "Scalable to 100G+ with your optics",
+          "Ideal for data center interconnects",
+        ],
       },
     ],
   },
