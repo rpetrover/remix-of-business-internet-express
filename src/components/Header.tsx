@@ -22,12 +22,9 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="#home" className="flex flex-col leading-tight">
-              <span className="text-lg md:text-xl font-bold text-primary">
-                Spectrum <span className="text-foreground">Business</span>
-              </span>
-              <span className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                by Business Internet Express
+            <a href="#home" className="flex items-center gap-2">
+              <span className="text-base md:text-lg font-bold tracking-tight text-primary whitespace-nowrap">
+                Business Internet Express
               </span>
             </a>
           </div>
