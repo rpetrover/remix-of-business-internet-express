@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { loadGoogleMapsScript, GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 
 export interface PlaceResult {
@@ -10,67 +10,75 @@ export interface PlaceResult {
 }
 
 export function useGooglePlaces(
-  inputRef: React.RefObject<HTMLInputElement>,
+  containerRef: React.RefObject<HTMLDivElement>,
   onPlaceSelect: (place: PlaceResult) => void
 ) {
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const onPlaceSelectRef = useRef(onPlaceSelect);
   onPlaceSelectRef.current = onPlaceSelect;
+  const autocompleteElementRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!GOOGLE_MAPS_API_KEY || !inputRef.current) return;
+    if (!GOOGLE_MAPS_API_KEY || !containerRef.current) return;
 
     let cancelled = false;
 
-    loadGoogleMapsScript()
-      .then(() => {
-        if (cancelled || !inputRef.current) return;
+    (async () => {
+      try {
+        await loadGoogleMapsScript();
+        if (cancelled || !containerRef.current) return;
 
-        const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+        // Use the new Places API (BasicPlaceAutocompleteElement)
+        const placesLib = await google.maps.importLibrary("places") as any;
+        if (cancelled || !containerRef.current) return;
+
+        const autocomplete = new placesLib.BasicPlaceAutocompleteElement({
           componentRestrictions: { country: "us" },
           types: ["address"],
-          fields: ["address_components", "formatted_address"],
         });
 
-        autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          if (!place.address_components) return;
+        autocomplete.addEventListener("gmp-select", async (event: any) => {
+          try {
+            const placePrediction = event.placePrediction;
+            const place = placePrediction.toPlace();
+            await place.fetchFields({ fields: ["addressComponents", "formattedAddress"] });
 
-          const components = place.address_components;
-          const get = (type: string) =>
-            components.find((c) => c.types.includes(type))?.long_name || "";
-          const getShort = (type: string) =>
-            components.find((c) => c.types.includes(type))?.short_name || "";
+            const components = place.addressComponents || [];
+            const get = (type: string) =>
+              components.find((c: any) => c.types?.includes(type))?.longText || "";
+            const getShort = (type: string) =>
+              components.find((c: any) => c.types?.includes(type))?.shortText || "";
 
-          const streetNumber = get("street_number");
-          const route = get("route");
-          const address = [streetNumber, route].filter(Boolean).join(" ");
+            const streetNumber = get("street_number");
+            const route = get("route");
+            const address = [streetNumber, route].filter(Boolean).join(" ");
 
-          onPlaceSelectRef.current({
-            address,
-            city: get("locality") || get("sublocality") || get("administrative_area_level_2"),
-            state: getShort("administrative_area_level_1"),
-            zipCode: get("postal_code"),
-            fullAddress: place.formatted_address || "",
-          });
+            onPlaceSelectRef.current({
+              address,
+              city: get("locality") || get("sublocality") || get("administrative_area_level_2"),
+              state: getShort("administrative_area_level_1"),
+              zipCode: get("postal_code"),
+              fullAddress: place.formattedAddress || "",
+            });
+          } catch {
+            // Place details fetch failed silently
+          }
         });
 
-        autocompleteRef.current = autocomplete;
+        // Clear existing content and append the autocomplete element
+        containerRef.current.innerHTML = "";
+        containerRef.current.appendChild(autocomplete);
+        autocompleteElementRef.current = autocomplete;
         setIsLoaded(true);
-      })
-      .catch(() => {
+      } catch {
         // Google Maps not available — autocomplete won't work, form still usable
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        autocompleteRef.current = null;
-      }
     };
-  }, [inputRef]);
+  }, [containerRef]);
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) return;

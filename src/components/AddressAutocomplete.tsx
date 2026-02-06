@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { useGooglePlaces, type PlaceResult } from "@/hooks/useGooglePlaces";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 
 interface AddressAutocompleteProps {
   id: string;
@@ -11,6 +12,7 @@ interface AddressAutocompleteProps {
   onPlaceSelect: (place: PlaceResult) => void;
   placeholder?: string;
   className?: string;
+  containerClassName?: string;
   required?: boolean;
 }
 
@@ -19,38 +21,50 @@ const AddressAutocomplete = ({
   value,
   onChange,
   onPlaceSelect,
-  placeholder = "123 Business Street",
+  placeholder = "Start typing your address...",
   className,
+  containerClassName,
   required,
 }: AddressAutocompleteProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { getCurrentLocation, isAvailable } = useGooglePlaces(inputRef, onPlaceSelect);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { getCurrentLocation, isAvailable } = useGooglePlaces(containerRef, onPlaceSelect);
 
-  return (
-    <div className="relative">
+  // If Google Maps API key is not configured, fall back to a regular input
+  if (!isAvailable) {
+    return (
       <Input
-        ref={inputRef}
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={className}
         required={required}
-        autoComplete="off"
       />
-      {isAvailable && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={getCurrentLocation}
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-xs text-muted-foreground hover:text-primary"
-          title="Use current location"
-        >
-          <MapPin className="h-3.5 w-3.5 mr-1" />
-          <span className="hidden sm:inline">Current Location</span>
-        </Button>
-      )}
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Google Places autocomplete element will be injected here */}
+      <div
+        ref={containerRef}
+        className={`google-autocomplete-container ${containerClassName || ""}`}
+      />
+
+      {/* Hidden fallback input for form validation */}
+      <input type="hidden" id={id} value={value} required={required} />
+
+      {/* Current Location button */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={getCurrentLocation}
+        className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+      >
+        <MapPin className="h-3.5 w-3.5 mr-1" />
+        Use Current Location
+      </Button>
     </div>
   );
 };

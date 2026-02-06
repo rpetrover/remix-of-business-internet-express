@@ -1,10 +1,5 @@
 // Google Maps API configuration
 // This is a publishable (client-side) API key — safe to include in frontend code.
-// You must enable these APIs in your Google Cloud Console:
-//   - Maps JavaScript API
-//   - Places API
-//   - Maps Static API
-//   - Street View Static API
 export const GOOGLE_MAPS_API_KEY = "AIzaSyBS37Bb8FIGRTyadw5yb2CH1KXY_JR8RtY";
 
 let loadPromise: Promise<void> | null = null;
@@ -14,15 +9,16 @@ export function loadGoogleMapsScript(): Promise<void> {
     return Promise.reject(new Error("Google Maps API key is not configured"));
   }
 
-  if ((window as any).google?.maps?.places) {
+  if ((window as any).google?.maps) {
     return Promise.resolve();
   }
 
   if (loadPromise) return loadPromise;
 
   loadPromise = new Promise((resolve, reject) => {
+    // Use the recommended async loading via importmap
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
