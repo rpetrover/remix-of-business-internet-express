@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Check, Wifi, Phone, Tv } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -83,7 +84,8 @@ const OrderCompletion = () => {
     zipCode: '',
     phoneNumberType: 'new' as 'transfer' | 'new',
     existingNumber: '',
-    preferredAreaCode: '212'
+    preferredAreaCode: '212',
+    smsConsent: false,
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -401,6 +403,28 @@ const OrderCompletion = () => {
                 {errors.general && (
                   <p className="text-sm text-destructive">{errors.general}</p>
                 )}
+
+                {/* SMS Consent */}
+                <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="smsConsent"
+                      checked={formData.smsConsent}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, smsConsent: checked === true }))
+                      }
+                    />
+                    <label htmlFor="smsConsent" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                      I agree to receive SMS/text messages from Business Internet Express regarding my order status, 
+                      service updates, and support communications at the mobile phone number provided above. 
+                      Message and data rates may apply. Message frequency varies. Reply STOP to unsubscribe at any time. 
+                      Reply HELP for help. View our{' '}
+                      <a href="/privacy" className="text-primary underline hover:text-primary/80">Privacy Policy</a>{' '}
+                      and{' '}
+                      <a href="/terms" className="text-primary underline hover:text-primary/80">Terms of Service</a>.
+                    </label>
+                  </div>
+                </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
                   {isSubmitting ? 'Submitting Order...' : 'Submit Order'}

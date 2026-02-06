@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, MessageSquare, MapPin, Clock, Users, Loader2, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,6 +20,7 @@ const ContactSection = () => {
     serviceAddress: "",
     speedRequirements: "",
     comments: "",
+    smsConsent: false,
   });
 
   const handleChange = (field: string, value: string) => {
@@ -114,6 +116,7 @@ const ContactSection = () => {
                       setFormData({
                         firstName: "", lastName: "", businessName: "", phone: "",
                         email: "", serviceAddress: "", speedRequirements: "", comments: "",
+                        smsConsent: false,
                       });
                     }}
                   >
@@ -226,6 +229,22 @@ const ContactSection = () => {
                       className="w-full px-4 py-3 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
                       placeholder="Tell us about your business needs, current challenges, or specific requirements..."
                     />
+                  </div>
+
+                  {/* SMS Consent */}
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="smsConsentContact"
+                      checked={formData.smsConsent}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, smsConsent: checked === true }))
+                      }
+                    />
+                    <label htmlFor="smsConsentContact" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                      I agree to receive SMS/text messages from Business Internet Express regarding my quote, 
+                      service updates, and support communications. Message and data rates may apply. 
+                      Reply STOP to unsubscribe. Reply HELP for help.
+                    </label>
                   </div>
 
                   <Button variant="cta" className="w-full py-4 text-lg font-semibold" disabled={isSubmitting}>
