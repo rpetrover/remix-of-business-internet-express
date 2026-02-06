@@ -1,1 +1,13 @@
 project_id = "kygamyqwwzrpmxkxvzwt"
+
+[functions.send-admin-email]
+verify_jwt = false
+
+[functions.receive-email]
+verify_jwt = false
+
+[functions.ai-email-reply]
+verify_jwt = false
+
+[functions.send-campaign]
+verify_jwt = false
