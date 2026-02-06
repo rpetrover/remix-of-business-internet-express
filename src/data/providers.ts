@@ -766,7 +766,316 @@ export const alternativeProviders: InternetProvider[] = [
     ],
   },
 
+  // --- Windstream (Kinetic) ---
+  {
+    id: "windstream",
+    name: "Windstream Kinetic",
+    logo: "/logos/windstream.png",
+    description: "Windstream Kinetic Business provides fiber and DSL internet across 18 states with competitive speeds and bundled voice options.",
+    technology: "Fiber / DSL",
+    serviceableZipPrefixes: [
+      // Arkansas
+      "716", "717", "718", "719", "720", "721", "722", "723", "724", "725", "726", "727", "728", "729",
+      // Georgia (rural/southern)
+      "310", "311", "312", "313", "314", "315", "316", "317", "318", "319",
+      // Iowa
+      "500", "501", "502", "503", "504", "505", "506", "507", "508", "509",
+      "510", "511", "512", "513", "514", "515", "516",
+      // Kentucky
+      "400", "401", "402", "403", "404", "405", "406", "407", "408", "409",
+      "410", "411", "412", "413", "414", "415", "416", "417", "418",
+      // Minnesota
+      "556", "557", "558", "559", "560", "561", "562",
+      // Missouri
+      "646", "647", "648", "649", "650", "651", "652", "653", "654", "655", "656", "657", "658",
+      // Nebraska
+      "680", "681", "683", "684", "685", "686", "687", "688", "689",
+      // New Mexico
+      "870", "871", "872", "873", "874", "875", "877",
+      // New York (upstate)
+      "130", "131", "132", "133", "134", "135", "136", "137", "138", "139",
+      // North Carolina
+      "270", "271", "272", "273", "274", "275", "276", "277", "278", "279",
+      // Ohio (rural)
+      "436", "437", "438", "439", "446", "447", "448", "449",
+      // Oklahoma
+      "730", "731", "734", "735", "736", "737", "738", "739", "740", "741",
+      // Pennsylvania (rural)
+      "157", "158", "159", "160", "161", "162", "163", "164", "165", "166", "167", "168", "169",
+      // South Carolina
+      "295", "296", "297", "298", "299",
+      // Texas (east)
+      "750", "751", "752", "753", "754", "755", "756", "757", "758", "759",
+      // Alabama
+      "354", "355", "356", "357", "358", "359", "360", "361", "362",
+      // Mississippi
+      "386", "387", "388", "389", "390", "391", "392", "393",
+      // Florida (panhandle)
+      "324", "325",
+    ],
+    plans: [
+      {
+        name: "Kinetic Business 200",
+        speed: "200 Mbps",
+        price: "$49.99",
+        features: ["Business-grade reliability", "24/7 support", "No data caps", "Free installation"],
+      },
+      {
+        name: "Kinetic Business 500",
+        speed: "500 Mbps",
+        price: "$69.99",
+        features: ["Business-grade reliability", "24/7 support", "No data caps", "Static IP available"],
+        recommended: true,
+      },
+      {
+        name: "Kinetic Business 1 Gig",
+        speed: "1 Gbps",
+        price: "$89.99",
+        features: ["Symmetrical fiber speeds", "24/7 support", "No data caps", "Static IP included", "Priority support"],
+      },
+    ],
+  },
+
+  // --- WOW Business ---
+  {
+    id: "wow",
+    name: "WOW! Business",
+    logo: "/logos/wow.png",
+    description: "WOW! Business delivers reliable cable and fiber internet at competitive prices across select Midwest and Southeast markets.",
+    technology: "Cable / Fiber",
+    serviceableZipPrefixes: [
+      // Alabama (Huntsville, Auburn, Montgomery, Dothan)
+      "350", "351", "354", "355", "356", "360", "361", "362", "363",
+      // Florida (Pinellas/Tampa area, Panama City)
+      "335", "336", "337", "338", "339", "324",
+      // Georgia (Columbus, Augusta, Savannah)
+      "310", "311", "312", "313", "318", "319",
+      // Illinois (Chicago suburbs, downstate)
+      "600", "601", "602", "603", "604", "605", "606", "607", "608",
+      // Indiana (Evansville, Fort Wayne)
+      "470", "471", "472", "473", "467", "468",
+      // Michigan (Detroit suburbs, Lansing, Grand Rapids)
+      "480", "481", "482", "483", "484", "485", "486", "487", "488", "489",
+      "490", "491", "492", "493", "494", "495",
+      // Ohio (Cleveland suburbs, Columbus)
+      "430", "431", "432", "433", "434", "435",
+      "440", "441", "442", "443", "444",
+      // South Carolina (Charleston)
+      "290", "291", "292", "293", "294",
+      // Tennessee (Knoxville, Chattanooga)
+      "370", "371", "372", "373", "374",
+    ],
+    plans: [
+      {
+        name: "WOW! Business 200",
+        speed: "200 Mbps",
+        price: "$49.99",
+        features: ["No data caps", "Free modem", "24/7 support", "No contract required"],
+      },
+      {
+        name: "WOW! Business 500",
+        speed: "500 Mbps",
+        price: "$69.99",
+        features: ["No data caps", "Free modem", "24/7 support", "Static IP option"],
+        recommended: true,
+      },
+      {
+        name: "WOW! Business 1 Gig",
+        speed: "1 Gbps",
+        price: "$89.99",
+        features: ["No data caps", "Free modem", "Priority support", "Static IP included"],
+      },
+    ],
+  },
+
+  // --- Ziply Fiber ---
+  {
+    id: "ziply",
+    name: "Ziply Fiber",
+    logo: "/logos/ziply.png",
+    description: "Ziply Fiber delivers 100% fiber internet to businesses across the Pacific Northwest with symmetrical gigabit speeds and no contracts.",
+    technology: "Fiber",
+    serviceableZipPrefixes: [
+      // Washington state
+      "980", "981", "982", "983", "984", "985", "986", "988", "989",
+      "990", "991", "992", "993", "994",
+      // Oregon
+      "970", "971", "972", "973", "974", "975", "976", "977", "978", "979",
+      // Idaho
+      "832", "833", "834", "835", "836", "837", "838",
+      // Montana (western)
+      "590", "591", "592", "593", "594", "595", "596", "597", "598", "599",
+    ],
+    plans: [
+      {
+        name: "Business Fiber 300",
+        speed: "300 Mbps",
+        price: "$40.00",
+        features: ["Symmetrical speeds", "No data caps", "No contracts", "Free installation"],
+      },
+      {
+        name: "Business Fiber 1 Gig",
+        speed: "1 Gbps",
+        price: "$60.00",
+        features: ["Symmetrical speeds", "No data caps", "No contracts", "Free installation", "Static IP available"],
+        recommended: true,
+      },
+      {
+        name: "Business Fiber 5 Gig",
+        speed: "5 Gbps",
+        price: "$300.00",
+        features: ["Symmetrical speeds", "No data caps", "No contracts", "Priority support", "Static IP included"],
+      },
+    ],
+  },
+
+  // --- T-Mobile Business Internet ---
+  {
+    id: "tmobile",
+    name: "T-Mobile Business Internet",
+    logo: "/logos/tmobile.png",
+    description: "T-Mobile 5G Business Internet delivers wireless broadband virtually nationwide with no annual contracts, no data caps, and quick self-setup.",
+    technology: "5G / Fixed Wireless",
+    nationwide: true,
+    plans: [
+      {
+        name: "Business Internet",
+        speed: "Up to 245 Mbps",
+        price: "$50.00",
+        features: ["No annual contract", "No data caps", "5G gateway included", "Self-setup in minutes", "Price lock guarantee"],
+      },
+      {
+        name: "Business Internet Plus",
+        speed: "Up to 400 Mbps",
+        price: "$70.00",
+        features: ["No annual contract", "No data caps", "5G gateway included", "Self-setup in minutes", "Priority support"],
+        recommended: true,
+      },
+      {
+        name: "Business Internet Premium",
+        speed: "Up to 500+ Mbps",
+        price: "$90.00",
+        features: ["No annual contract", "No data caps", "5G gateway included", "Priority network access", "Dedicated support line"],
+      },
+    ],
+  },
+
   // ─── Dedicated Fiber / Enterprise Providers ──────────────────────────────────
+
+  // --- Segra ---
+  {
+    id: "segra",
+    name: "Segra",
+    logo: "/logos/segra.png",
+    description: "Segra owns and operates a 34,000+ mile fiber network across the Mid-Atlantic and Southeast, delivering dedicated internet, Ethernet, and dark fiber services.",
+    technology: "Dedicated Fiber",
+    dedicatedFiber: true,
+    serviceableZipPrefixes: [
+      // Virginia
+      "220", "221", "222", "223", "224", "225", "226", "227", "228", "229",
+      "230", "231", "232", "233", "234", "235", "236", "237", "238", "239",
+      "240", "241", "242", "243", "244", "245", "246",
+      // North Carolina
+      "270", "271", "272", "273", "274", "275", "276", "277", "278", "279",
+      "280", "281", "282", "283", "284", "285", "286", "287", "288", "289",
+      // South Carolina
+      "290", "291", "292", "293", "294", "295", "296", "297", "298", "299",
+      // Georgia
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      // Tennessee
+      "370", "371", "372", "373", "374", "376", "377",
+      // Maryland
+      "206", "207", "208", "209", "210", "211", "212", "214",
+      // DC
+      "200", "201", "202", "203", "204", "205",
+      // West Virginia
+      "247", "248", "249", "250", "251", "252", "253", "254", "255", "256",
+      // Alabama
+      "350", "351", "352", "354", "355",
+      // Mississippi
+      "386", "387", "388", "389", "390", "391",
+      // Pennsylvania (eastern)
+      "170", "171", "172", "173", "174", "175", "176",
+      // Delaware
+      "197", "198", "199",
+    ],
+    plans: [
+      {
+        name: "DIA 100",
+        speed: "100 Mbps",
+        price: "$329",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC monitoring", "Managed router option"],
+      },
+      {
+        name: "DIA 500",
+        speed: "500 Mbps",
+        price: "$579",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC monitoring", "Managed router", "Static IP block"],
+        recommended: true,
+      },
+      {
+        name: "DIA 1 Gig",
+        speed: "1 Gbps",
+        price: "$829",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC monitoring", "Managed CPE", "Static IP block", "Dark fiber available"],
+      },
+    ],
+  },
+
+  // --- Uniti Fiber ---
+  {
+    id: "uniti",
+    name: "Uniti Fiber",
+    logo: "/logos/uniti.png",
+    description: "Uniti Fiber operates a dense metro fiber footprint across the Southeast, delivering dedicated internet and lit/dark fiber for businesses.",
+    technology: "Dedicated Fiber",
+    dedicatedFiber: true,
+    serviceableZipPrefixes: [
+      // Alabama (Birmingham, Huntsville, Mobile)
+      "350", "351", "352", "354", "355", "356", "357", "358", "359",
+      "360", "361", "362", "363", "364", "365", "366", "367",
+      // Florida (Jacksonville, Pensacola, Tallahassee)
+      "320", "321", "322", "323", "324", "325", "326",
+      "330", "331", "332", "333", "334",
+      // Georgia (Atlanta, Savannah, Macon)
+      "300", "301", "302", "303", "304", "305", "306", "307", "308", "309",
+      "310", "311", "312", "313",
+      // Louisiana (New Orleans, Baton Rouge, Shreveport)
+      "700", "701", "703", "704", "705", "706", "707", "708",
+      "710", "711", "712", "713", "714",
+      // Mississippi (Jackson, Gulfport, Hattiesburg)
+      "386", "387", "388", "389", "390", "391", "392", "393", "394", "395", "396", "397",
+      // Tennessee (Nashville, Memphis, Knoxville)
+      "370", "371", "372", "373", "374", "376", "377", "378", "379",
+      "380", "381", "382", "383", "384", "385",
+      // Virginia (Hampton Roads)
+      "230", "231", "232", "233", "234", "235", "236",
+      // Texas (Houston, Dallas areas)
+      "770", "771", "772", "773", "774", "775",
+      "750", "751", "752", "753", "754", "755",
+    ],
+    plans: [
+      {
+        name: "DIA 100",
+        speed: "100 Mbps",
+        price: "$299",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC support", "Managed CPE option"],
+      },
+      {
+        name: "DIA 500",
+        speed: "500 Mbps",
+        price: "$549",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC support", "Managed CPE", "Static IP block"],
+        recommended: true,
+      },
+      {
+        name: "DIA 1 Gig",
+        speed: "1 Gbps",
+        price: "$799",
+        features: ["Dedicated symmetrical fiber", "99.99% uptime SLA", "24/7 NOC support", "Managed CPE", "Static IP block", "Scalable to 10G+"],
+      },
+    ],
+  },
 
   // --- Crown Castle Fiber ---
   {
