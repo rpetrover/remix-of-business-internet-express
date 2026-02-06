@@ -19,7 +19,8 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="#home" className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2">
+              <img src="/favicon.png" alt="Business Internet Express" className="h-8 w-8" />
               <span className="text-base md:text-lg font-bold tracking-tight text-primary whitespace-nowrap">
                 Business Internet Express
               </span>
