@@ -230,7 +230,7 @@ export const useCart = () => {
       });
       
       // Navigate to upsell page first
-      navigate('/upsell');
+      navigate('/order-completion');
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
