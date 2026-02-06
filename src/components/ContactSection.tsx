@@ -284,7 +284,7 @@ const ContactSection = () => {
                       <h4 className="font-semibold text-foreground mb-1">Call Us Now</h4>
                       <a href="tel:+18882303278" className="text-2xl font-bold text-primary mb-2 block hover:text-primary/80 transition-colors">1-888-230-FAST</a>
                       <p className="text-sm text-muted-foreground">
-                        Speak directly with our business specialists
+                        AI-powered sales & support — available 24/7
                       </p>
                     </div>
                   </div>
@@ -311,7 +311,7 @@ const ContactSection = () => {
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Live Chat</h4>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Available Monday - Friday, 8 AM - 8 PM EST
+                        Available 24/7 — 365 days a year
                       </p>
                       <Button variant="outline" size="sm">
                         Start Chat
@@ -326,11 +326,11 @@ const ContactSection = () => {
               <Card className="shadow-medium">
                 <CardContent className="p-6 text-center">
                   <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
-                  <h4 className="font-semibold text-foreground mb-2">Business Hours</h4>
+                  <h4 className="font-semibold text-foreground mb-2">Always Available</h4>
                   <p className="text-sm text-muted-foreground">
-                    Mon-Fri: 8 AM - 8 PM<br />
-                    Sat: 9 AM - 5 PM<br />
-                    Sun: Emergency only
+                    24 Hours a Day<br />
+                    7 Days a Week<br />
+                    365 Days a Year
                   </p>
                 </CardContent>
               </Card>
@@ -338,11 +338,11 @@ const ContactSection = () => {
               <Card className="shadow-medium">
                 <CardContent className="p-6 text-center">
                   <Users className="h-8 w-8 text-primary mx-auto mb-3" />
-                  <h4 className="font-semibold text-foreground mb-2">Expert Team</h4>
+                  <h4 className="font-semibold text-foreground mb-2">AI-Powered Team</h4>
                   <p className="text-sm text-muted-foreground">
-                    Certified Spectrum<br />
-                    Business specialists<br />
-                    ready to help
+                    Intelligent AI agents<br />
+                    available around the clock<br />
+                    to help your business
                   </p>
                 </CardContent>
               </Card>
