@@ -1,6 +1,6 @@
 // Google Maps API configuration
-// This is a publishable (client-side) API key — safe to include in frontend code.
-export const GOOGLE_MAPS_API_KEY = "AIzaSyBS37Bb8FIGRTyadw5yb2CH1KXY_JR8RtY";
+// Uses environment variable for the API key
+export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 let loadPromise: Promise<void> | null = null;
 
@@ -16,7 +16,6 @@ export function loadGoogleMapsScript(): Promise<void> {
   if (loadPromise) return loadPromise;
 
   loadPromise = new Promise((resolve, reject) => {
-    // Use the recommended async loading via importmap
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
