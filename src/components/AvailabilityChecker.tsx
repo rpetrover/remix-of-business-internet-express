@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Clock } from "lucide-react";
+import { Search, Loader2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { checkSpectrumAvailability, getAvailableProviders } from "@/data/providers";
 
 const AvailabilityChecker = () => {
   const [formData, setFormData] = useState({
-    businessName: "",
-    phone: "",
-    speed: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
   });
   const [isChecking, setIsChecking] = useState(false);
   const navigate = useNavigate();
@@ -21,22 +23,26 @@ const AvailabilityChecker = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const getFullAddress = () => {
+    return [formData.address, formData.city, formData.state, formData.zipCode].filter(Boolean).join(", ");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.businessName) {
+    if (!formData.address || !formData.zipCode) {
       toast({
         title: "Missing Information",
-        description: "Please enter your business name.",
+        description: "Please enter your street address and ZIP code.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!formData.phone) {
+    if (formData.zipCode.length < 5) {
       toast({
-        title: "Missing Information",
-        description: "Please enter your phone number.",
+        title: "Invalid ZIP Code",
+        description: "Please enter a valid 5-digit ZIP code.",
         variant: "destructive",
       });
       return;
@@ -44,106 +50,112 @@ const AvailabilityChecker = () => {
 
     setIsChecking(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Navigate to the full check-availability page with pre-filled info
-    navigate("/check-availability", {
-      state: {
-        businessName: formData.businessName,
-        phone: formData.phone,
-        speed: formData.speed,
-      },
-    });
+    const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
+    const fullAddress = getFullAddress();
+
+    if (isSpectrumAvailable) {
+      navigate("/availability/success", { state: { address: fullAddress } });
+    } else {
+      const altProviders = getAvailableProviders(formData.zipCode);
+      navigate("/availability/no-coverage", {
+        state: { address: fullAddress, availableProviders: altProviders },
+      });
+    }
 
     setIsChecking(false);
   };
 
   return (
-    <section id="check-availability" className="py-16 bg-primary">
+    <section id="check-availability" className="py-16 bg-secondary/30">
       <div className="container mx-auto px-4">
-        <div className="max-w-xl mx-auto">
-          <div className="bg-background rounded-xl shadow-lg p-8 md:p-10">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Check Availability
-              </h2>
-              <p className="text-muted-foreground">
-                Enter your business address
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <Label htmlFor="home-business" className="text-sm font-semibold text-foreground">
-                  Business Name
-                </Label>
-                <Input
-                  id="home-business"
-                  value={formData.businessName}
-                  onChange={(e) => handleInputChange("businessName", e.target.value)}
-                  placeholder="Your business name"
-                  className="mt-1.5 h-12 rounded-lg border-border"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="home-phone" className="text-sm font-semibold text-foreground">
-                  Phone Number
-                </Label>
-                <Input
-                  id="home-phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="mt-1.5 h-12 rounded-lg border-border"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="home-speed" className="text-sm font-semibold text-foreground">
-                  Internet Speed Needed
-                </Label>
-                <Select
-                  value={formData.speed}
-                  onValueChange={(value) => handleInputChange("speed", value)}
-                >
-                  <SelectTrigger id="home-speed" className="mt-1.5 h-12 rounded-lg border-border">
-                    <SelectValue placeholder="Select speed requirement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">Up to 100 Mbps</SelectItem>
-                    <SelectItem value="standard">100–300 Mbps</SelectItem>
-                    <SelectItem value="fast">300–500 Mbps</SelectItem>
-                    <SelectItem value="ultra">500 Mbps – 1 Gbps</SelectItem>
-                    <SelectItem value="enterprise">1 Gbps+</SelectItem>
-                    <SelectItem value="unsure">Not sure yet</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-semibold rounded-lg"
-                size="lg"
-                disabled={isChecking}
-              >
-                {isChecking ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Get Free Quote"
-                )}
-              </Button>
-
-              <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                Response within 30 minutes
-              </p>
-            </form>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <MapPin className="h-10 w-10 text-primary mx-auto mb-3" />
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Check Internet Availability
+            </h2>
+            <p className="text-muted-foreground">
+              Enter your address to see which providers and plans are available at your location
+            </p>
           </div>
+
+          <Card className="shadow-lg">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-xl flex items-center justify-center gap-2">
+                <Search className="h-5 w-5 text-primary" />
+                Enter Your Business Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="home-address">
+                    Street Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="home-address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange("address", e.target.value)}
+                    placeholder="123 Business Street"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="home-city">City</Label>
+                    <Input
+                      id="home-city"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange("city", e.target.value)}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="home-state">State</Label>
+                    <Input
+                      id="home-state"
+                      value={formData.state}
+                      onChange={(e) => handleInputChange("state", e.target.value)}
+                      placeholder="ST"
+                      maxLength={2}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="home-zip">
+                      ZIP Code <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="home-zip"
+                      value={formData.zipCode}
+                      onChange={(e) => handleInputChange("zipCode", e.target.value.replace(/\D/g, "").slice(0, 5))}
+                      placeholder="12345"
+                      required
+                      maxLength={5}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={isChecking}
+                >
+                  {isChecking ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking Availability...
+                    </>
+                  ) : (
+                    "Check Availability"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
