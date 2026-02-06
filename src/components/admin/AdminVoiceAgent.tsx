@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminVoiceAgent = () => {
-  const [agentId, setAgentId] = useState('');
+  const [agentId, setAgentId] = useState('agent_4701kgtb1mdhfjkv2brwt1a1s68j');
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
