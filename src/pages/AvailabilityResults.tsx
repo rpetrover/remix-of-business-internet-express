@@ -16,6 +16,8 @@ const AvailabilityResults = () => {
   useEffect(() => {
     if (!address) {
       navigate("/check-availability", { replace: true });
+    } else {
+      window.scrollTo(0, 0);
     }
   }, [address, navigate]);
 
