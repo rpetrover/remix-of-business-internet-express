@@ -113,10 +113,10 @@ const Footer = () => {
             of their respective owners. Pricing and availability subject to change. Service not available in all areas.
           </p>
           <p className="text-xs text-primary-foreground/60 text-center">
-            <strong>Installation Disclaimer:</strong> "Installation in under 24 hours" and "Same-Day & Next-Day Installation" 
-            are best-effort goals and are not guaranteed. Actual installation timelines depend on the service provider, 
-            location, infrastructure availability, and scheduling. Some installations may require additional time 
-            for equipment delivery, permits, or construction. Contact us for a more accurate estimate for your specific location.
+            <strong>Installation Disclaimer:</strong> Installation timelines vary by provider, 
+            location, infrastructure availability, and scheduling. While many customers are connected within a few business days, 
+            some installations may require additional time for equipment delivery, permits, or construction. 
+            Contact us for a more accurate estimate for your specific location.
           </p>
         </div>
       </div>

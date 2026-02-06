@@ -18,10 +18,10 @@ const VideoSplashBanner = () => {
     },
     {
       id: 'install',
-      title: 'Installed in Under 24 Hours',
-      subtitle: 'Same-day & next-day availability',
+      title: 'Fast, Easy Installation',
+      subtitle: 'Get connected quickly',
       icon: <Clock className="h-16 w-16" />,
-      description: 'No long waits — get online when you need it',
+      description: 'We handle the setup so you can focus on your business',
     },
     {
       id: 'easy',

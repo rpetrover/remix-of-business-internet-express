@@ -100,11 +100,11 @@ const Hero = () => {
           {/* Left: Headlines */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-              Get Connected
-              <span className="block">In Under 24 Hours</span>
+              Fast Business Internet
+              <span className="block">Made Simple</span>
             </h1>
             <div className="bg-accent text-accent-foreground px-4 py-2 rounded-lg inline-block mb-6 font-semibold">
-              Same-Day & Next-Day Installation Available
+              Quick Installation — Many Customers Connected Within Days
             </div>
             <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-2xl">
               Lightning-fast business internet with the easiest setup in the industry.
@@ -115,7 +115,7 @@ const Hero = () => {
             <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start text-primary-foreground/90 text-sm">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                <span className="font-medium">Installed in Under 24 Hours</span>
+                <span className="font-medium">Fast, Hassle-Free Installation</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
@@ -131,8 +131,8 @@ const Hero = () => {
             <div className="mt-4 flex items-start gap-2 text-primary-foreground/50 text-xs max-w-xl">
               <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <p>
-                Installation in under 24 hours is a best-effort goal and is not guaranteed. 
-                Actual installation times vary by provider, location, and service availability.
+                Installation timelines vary by provider, location, and service availability. 
+                Many customers are connected within a few business days.
               </p>
             </div>
           </div>

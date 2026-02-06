@@ -421,7 +421,7 @@ Cable and fiber both work well for VoIP. Satellite does NOT work well for VoIP d
 2. **Review Options:** We show all available providers and plans at that location
 3. **Expert Consultation:** Our team (or this AI assistant) helps compare options
 4. **Order:** Customer selects a plan and we place the order with the provider
-5. **Installation:** Provider schedules and completes installation (often within 24 hours)
+5. **Installation:** Provider schedules and completes installation (many customers are connected within a few business days)
 6. **Ongoing Support:** We remain the customer's advocate for the life of the service
 
 **We never charge the customer extra.** Our service is free because providers pay us a referral/commission. The customer always gets the same price (or better) as going directly to the provider.

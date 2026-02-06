@@ -227,7 +227,7 @@ const OrderCompletion = () => {
       
       toast({
         title: "Order Submitted!",
-        description: "We'll contact you within 24 hours to schedule installation.",
+        description: "We'll be in touch within 1-2 business days to schedule installation.",
       });
       
       // Navigate to success page with order details
@@ -514,7 +514,7 @@ const OrderCompletion = () => {
 
                 <p className="text-sm text-muted-foreground text-center">
                   By submitting this order, you agree to our Terms of Service. 
-                  A representative will contact you within 24 hours to confirm installation details.
+                  A representative will contact you within 1-2 business days to confirm installation details.
                 </p>
               </form>
             </CardContent>
