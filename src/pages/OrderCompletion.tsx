@@ -207,13 +207,31 @@ const OrderCompletion = () => {
       // Simulate order submission
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Build order data to pass to success page
+      const orderData = {
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        items: cartItems.map(item => ({
+          product_name: item.product_name,
+          price: item.price,
+          speed: item.speed,
+          is_bundle: item.is_bundle,
+        })),
+        totalPrice: getTotalPrice(),
+      };
+      
       toast({
         title: "Order Submitted!",
         description: "We'll contact you within 24 hours to schedule installation.",
       });
       
-      // Navigate to a success page or back to home
-      navigate('/', { replace: true });
+      // Navigate to success page with order details
+      navigate('/order-success', { state: orderData, replace: true });
     } catch (error) {
       toast({
         title: "Error",

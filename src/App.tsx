@@ -15,6 +15,7 @@ import AvailabilityResults from "./pages/AvailabilityResults";
 import Unsubscribe from "./pages/Unsubscribe";
 import Admin from "./pages/Admin";
 import VerifyEmail from "./pages/VerifyEmail";
+import OrderSuccess from "./pages/OrderSuccess";
 import ChatWidget from "./components/ChatWidget";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
