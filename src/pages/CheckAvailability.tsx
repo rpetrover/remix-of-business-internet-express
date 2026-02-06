@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,12 +7,8 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Search, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SpectrumResults from "@/components/SpectrumResults";
-import AlternativeResults from "@/components/AlternativeResults";
 import { useToast } from "@/hooks/use-toast";
-import { checkSpectrumAvailability, getAvailableProviders, type InternetProvider } from "@/data/providers";
-
-type ResultType = "spectrum" | "alternative" | null;
+import { checkSpectrumAvailability, getAvailableProviders } from "@/data/providers";
 
 const CheckAvailabilityPage = () => {
   const [formData, setFormData] = useState({
@@ -23,9 +20,7 @@ const CheckAvailabilityPage = () => {
     phone: "",
   });
   const [isChecking, setIsChecking] = useState(false);
-  const [resultType, setResultType] = useState<ResultType>(null);
-  const [checkedAddress, setCheckedAddress] = useState("");
-  const [availableProviders, setAvailableProviders] = useState<InternetProvider[]>([]);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
@@ -59,30 +54,19 @@ const CheckAvailabilityPage = () => {
     }
 
     setIsChecking(true);
-    setResultType(null);
 
     // Simulate network delay for UX
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
-    const altProviders = getAvailableProviders(formData.zipCode);
     const fullAddress = getFullAddress();
-    setCheckedAddress(fullAddress);
-    setAvailableProviders(altProviders);
 
     if (isSpectrumAvailable) {
-      setResultType("spectrum");
-      toast({
-        title: "Great News!",
-        description: "Spectrum Business services are available at your location.",
-      });
+      navigate("/availability/success", { state: { address: fullAddress } });
     } else {
-      setResultType("alternative");
-      toast({
-        title: "Spectrum Not Available",
-        description: altProviders.length > 0
-          ? `We found ${altProviders.length} other provider${altProviders.length !== 1 ? "s" : ""} for your area.`
-          : "Contact us for help finding service in your area.",
+      const altProviders = getAvailableProviders(formData.zipCode);
+      navigate("/availability/no-coverage", {
+        state: { address: fullAddress, availableProviders: altProviders },
       });
     }
 
@@ -219,10 +203,6 @@ const CheckAvailabilityPage = () => {
           </div>
         </div>
       </section>
-
-      {/* Results */}
-      {resultType === "spectrum" && <SpectrumResults address={checkedAddress} />}
-      {resultType === "alternative" && <AlternativeResults address={checkedAddress} availableProviders={availableProviders} />}
 
       <Footer />
     </div>

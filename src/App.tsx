@@ -14,6 +14,8 @@ import SupportPage from "./pages/Support";
 import Auth from "./pages/Auth";
 import OrderCompletion from "./pages/OrderCompletion";
 import Upsell from "./pages/Upsell";
+import AvailabilitySuccess from "./pages/AvailabilitySuccess";
+import AvailabilityFailure from "./pages/AvailabilityFailure";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/upsell" element={<Upsell />} />
           <Route path="/order-completion" element={<OrderCompletion />} />
+          <Route path="/availability/success" element={<AvailabilitySuccess />} />
+          <Route path="/availability/no-coverage" element={<AvailabilityFailure />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
