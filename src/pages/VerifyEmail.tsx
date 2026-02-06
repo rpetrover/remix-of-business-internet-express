@@ -122,12 +122,15 @@ const VerifyEmail = () => {
             <Button
               size="lg"
               className="w-full"
-              onClick={() => navigate("/check-availability")}
+              onClick={() => navigate("/order-completion")}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Continue Shopping
+              Continue to Checkout
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" onClick={() => navigate("/check-availability")}>
+              Browse More Plans
+            </Button>
+            <Button variant="ghost" asChild>
               <Link to="/">Go to Home Page</Link>
             </Button>
           </div>

@@ -54,23 +54,23 @@ export const useCart = () => {
     loadGuestCart();
 
     // Get current user
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
+    supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
+      setUser(currentUser);
+      if (currentUser) {
         // Migrate guest cart to database and load user cart
-        migrateGuestCartToDatabase();
+        migrateGuestCartForUser(currentUser);
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const previousUser = user;
-      setUser(session?.user ?? null);
+      const sessionUser = session?.user ?? null;
+      setUser(sessionUser);
       
-      if (session?.user && !previousUser) {
-        // User just logged in - migrate guest cart
-        await migrateGuestCartToDatabase();
-      } else if (!session?.user && previousUser) {
+      if (sessionUser && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        // User just logged in or verified — migrate guest cart using session user directly
+        await migrateGuestCartForUser(sessionUser);
+      } else if (!sessionUser) {
         // User logged out - load guest cart
         loadGuestCart();
       }
@@ -126,9 +126,9 @@ export const useCart = () => {
     }
   };
 
-  const migrateGuestCartToDatabase = async () => {
+  const migrateGuestCartForUser = async (authUser: any) => {
     const guestCart = localStorage.getItem('guest-cart');
-    if (!guestCart || !user) return;
+    if (!guestCart || !authUser) return;
 
     try {
       const parsedCart: CartItem[] = JSON.parse(guestCart);
@@ -139,7 +139,7 @@ export const useCart = () => {
         await supabase
           .from('cart_items')
           .upsert({
-            user_id: user.id,
+            user_id: authUser.id,
             product_name: item.product_name,
             product_type: item.product_type,
             price: item.price,
@@ -152,7 +152,23 @@ export const useCart = () => {
 
       // Clear guest cart and load from database
       localStorage.removeItem('guest-cart');
-      await loadCartItems();
+      
+      // Load cart items directly using the authenticated user
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setCartItems((data || []).map(item => ({
+          ...item,
+          product_type: item.product_type as 'internet' | 'phone' | 'tv' | 'bundle'
+        })));
+      } finally {
+        setIsLoading(false);
+      }
 
       toast({
         title: "Cart Synced",
