@@ -1,0 +1,293 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight } from 'lucide-react';
+
+interface Order {
+  id: string;
+  customer_name: string;
+  service_address: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  contact_phone: string;
+  contact_email: string;
+  service_type: string;
+  preferred_provider: string | null;
+  selected_plan: string | null;
+  speed: string | null;
+  monthly_price: number | null;
+  status: string;
+  channel: string;
+  intelisys_email_sent: boolean;
+  intelisys_sent_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const AdminOrders = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to load orders', variant: 'destructive' });
+    } else {
+      setOrders((data as unknown as Order[]) || []);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
+    } else {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+      toast({ title: 'Updated', description: `Order status changed to ${newStatus}` });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, string> = {
+      pending: 'bg-amber-500/10 text-amber-600',
+      submitted: 'bg-primary/10 text-primary',
+      processing: 'bg-blue-500/10 text-blue-600',
+      confirmed: 'bg-emerald-500/10 text-emerald-600',
+      installed: 'bg-green-600/10 text-green-700',
+      cancelled: 'bg-destructive/10 text-destructive',
+    };
+    return <Badge className={variants[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
+  };
+
+  const getChannelBadge = (channel: string) => {
+    const icons: Record<string, string> = { chat: '💬', email: '📧', phone: '📞', web: '🌐' };
+    return <Badge variant="outline" className="text-xs">{icons[channel] || '📋'} {channel}</Badge>;
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Orders List */}
+      <Card className="lg:col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Orders ({orders.length})
+          </CardTitle>
+          <Button variant="ghost" size="icon" onClick={fetchOrders}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-[600px]">
+            {orders.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>No orders yet</p>
+                <p className="text-sm mt-1">Orders from chat, email, and phone will appear here.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {orders.map((order) => (
+                  <button
+                    key={order.id}
+                    onClick={() => setSelectedOrder(order)}
+                    className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${
+                      selectedOrder?.id === order.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium truncate">{order.customer_name}</span>
+                          {getStatusBadge(order.status)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {order.service_address}, {order.city}, {order.state}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getChannelBadge(order.channel)}
+                          {order.preferred_provider && (
+                            <span className="text-xs text-muted-foreground">{order.preferred_provider}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(order.created_at).toLocaleDateString()} {new Date(order.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Order Detail */}
+      <Card className="lg:col-span-2">
+        {selectedOrder ? (
+          <>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">{selectedOrder.customer_name}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Order ID: {selectedOrder.id.slice(0, 8)}... • {new Date(selectedOrder.created_at).toLocaleString()}
+                  </p>
+                </div>
+                {getStatusBadge(selectedOrder.status)}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Customer Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Service Address
+                  </h4>
+                  <div className="text-sm text-muted-foreground">
+                    <p>{selectedOrder.service_address}</p>
+                    <p>{selectedOrder.city}, {selectedOrder.state} {selectedOrder.zip}</p>
+                    <p>{selectedOrder.country}</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Phone className="h-4 w-4" /> Contact Info
+                  </h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p className="flex items-center gap-2">
+                      <Phone className="h-3 w-3" /> {selectedOrder.contact_phone}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Mail className="h-3 w-3" /> {selectedOrder.contact_email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Details */}
+              <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                <h4 className="text-sm font-semibold">Service Details</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Type:</span>{' '}
+                    <span>{selectedOrder.service_type}</span>
+                  </div>
+                  {selectedOrder.preferred_provider && (
+                    <div>
+                      <span className="text-muted-foreground">Provider:</span>{' '}
+                      <span>{selectedOrder.preferred_provider}</span>
+                    </div>
+                  )}
+                  {selectedOrder.selected_plan && (
+                    <div>
+                      <span className="text-muted-foreground">Plan:</span>{' '}
+                      <span>{selectedOrder.selected_plan}</span>
+                    </div>
+                  )}
+                  {selectedOrder.speed && (
+                    <div>
+                      <span className="text-muted-foreground">Speed:</span>{' '}
+                      <span>{selectedOrder.speed}</span>
+                    </div>
+                  )}
+                  {selectedOrder.monthly_price && (
+                    <div>
+                      <span className="text-muted-foreground">Price:</span>{' '}
+                      <span>${selectedOrder.monthly_price}/mo</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-muted-foreground">Channel:</span>{' '}
+                    {getChannelBadge(selectedOrder.channel)}
+                  </div>
+                </div>
+                {selectedOrder.notes && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <span className="text-muted-foreground text-sm">Notes:</span>
+                    <p className="text-sm mt-1">{selectedOrder.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Intelisys Status */}
+              <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Globe className="h-4 w-4" /> Intelisys Submission
+                </h4>
+                <div className="text-sm">
+                  {selectedOrder.intelisys_email_sent ? (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-500/10 text-emerald-600">✓ Sent</Badge>
+                      {selectedOrder.intelisys_sent_at && (
+                        <span className="text-muted-foreground">
+                          at {new Date(selectedOrder.intelisys_sent_at).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <Badge className="bg-amber-500/10 text-amber-600">Pending</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Actions */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                <span className="text-sm text-muted-foreground self-center mr-2">Update Status:</span>
+                {['pending', 'submitted', 'processing', 'confirmed', 'installed', 'cancelled'].map(status => (
+                  <Button
+                    key={status}
+                    size="sm"
+                    variant={selectedOrder.status === status ? 'default' : 'outline'}
+                    onClick={() => updateStatus(selectedOrder.id, status)}
+                    disabled={selectedOrder.status === status}
+                    className="text-xs capitalize"
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-[600px] text-muted-foreground">
+            <div className="text-center">
+              <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <p>Select an order to view details</p>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+export default AdminOrders;

@@ -223,6 +223,81 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          channel: string
+          city: string
+          contact_email: string
+          contact_phone: string
+          country: string
+          created_at: string
+          customer_name: string
+          id: string
+          intelisys_email_sent: boolean
+          intelisys_sent_at: string | null
+          monthly_price: number | null
+          notes: string | null
+          preferred_provider: string | null
+          resend_id: string | null
+          selected_plan: string | null
+          service_address: string
+          service_type: string
+          speed: string | null
+          state: string
+          status: string
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          channel?: string
+          city: string
+          contact_email: string
+          contact_phone: string
+          country?: string
+          created_at?: string
+          customer_name: string
+          id?: string
+          intelisys_email_sent?: boolean
+          intelisys_sent_at?: string | null
+          monthly_price?: number | null
+          notes?: string | null
+          preferred_provider?: string | null
+          resend_id?: string | null
+          selected_plan?: string | null
+          service_address: string
+          service_type?: string
+          speed?: string | null
+          state: string
+          status?: string
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          channel?: string
+          city?: string
+          contact_email?: string
+          contact_phone?: string
+          country?: string
+          created_at?: string
+          customer_name?: string
+          id?: string
+          intelisys_email_sent?: boolean
+          intelisys_sent_at?: string | null
+          monthly_price?: number | null
+          notes?: string | null
+          preferred_provider?: string | null
+          resend_id?: string | null
+          selected_plan?: string | null
+          service_address?: string
+          service_type?: string
+          speed?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
