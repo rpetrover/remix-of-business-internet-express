@@ -1,34 +1,74 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Phone, Wifi, Tv, Smartphone, Star } from "lucide-react";
-import { spectrumPlans } from "@/data/providers";
+import { CheckCircle, Phone, Wifi, Tv, Smartphone, Star, MessageCircle } from "lucide-react";
+import { spectrumPlans, type InternetPlan } from "@/data/providers";
+import { useCart } from "@/hooks/useCart";
 
 interface SpectrumResultsProps {
   address: string;
 }
 
+const parsePrice = (price: string): number => {
+  const match = price.replace(/[^0-9.]/g, "");
+  return parseFloat(match) || 0;
+};
+
 const SpectrumResults = ({ address }: SpectrumResultsProps) => {
+  const { addToCart } = useCart();
+
+  const handleSelectPlan = (plan: InternetPlan) => {
+    addToCart({
+      product_name: `Spectrum Business — ${plan.name}`,
+      product_type: "internet",
+      price: parsePrice(plan.price),
+      speed: plan.speed,
+      features: plan.features,
+    });
+  };
+
+  const openChat = () => {
+    window.dispatchEvent(new CustomEvent("open-chat-widget"));
+  };
+
   const additionalServices = [
     {
       icon: <Phone className="h-10 w-10 text-primary" />,
       name: "Business Phone",
       description: "Professional phone with 35+ features",
       price: "From $19.99/mo",
+      productType: "phone" as const,
+      numericPrice: 19.99,
+      features: ["Unlimited calling", "Voicemail to email", "Auto attendant"],
     },
     {
       icon: <Tv className="h-10 w-10 text-primary" />,
       name: "Business TV",
       description: "125+ channels in HD",
       price: "From $44.99/mo",
+      productType: "tv" as const,
+      numericPrice: 44.99,
+      features: ["125+ channels", "HD programming", "Multiple receivers"],
     },
     {
       icon: <Smartphone className="h-10 w-10 text-primary" />,
       name: "Mobile Service",
       description: "Unlimited 5G plans",
       price: "From $29.99/line",
+      productType: "phone" as const,
+      numericPrice: 29.99,
+      features: ["Unlimited data", "5G coverage", "Mobile hotspot"],
     },
   ];
+
+  const handleAddService = (service: typeof additionalServices[0]) => {
+    addToCart({
+      product_name: `Spectrum ${service.name}`,
+      product_type: service.productType,
+      price: service.numericPrice,
+      features: service.features,
+    });
+  };
 
   return (
     <section className="py-16 bg-secondary/30 animate-in fade-in duration-500">
@@ -87,6 +127,7 @@ const SpectrumResults = ({ address }: SpectrumResultsProps) => {
                   <Button
                     variant={plan.recommended ? "default" : "outline"}
                     className="w-full"
+                    onClick={() => handleSelectPlan(plan)}
                   >
                     Select Plan
                   </Button>
@@ -111,7 +152,12 @@ const SpectrumResults = ({ address }: SpectrumResultsProps) => {
                   <p className="text-primary font-semibold mt-1">{service.price}</p>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleAddService(service)}
+                  >
                     Add to Package
                   </Button>
                 </CardContent>
@@ -125,7 +171,7 @@ const SpectrumResults = ({ address }: SpectrumResultsProps) => {
           <CardHeader>
             <CardTitle className="text-2xl">Ready to Get Started?</CardTitle>
             <p className="text-muted-foreground">
-              Speak with a specialist to customize your package and schedule installation
+              Chat with our AI agent or call to customize your package and schedule installation
             </p>
           </CardHeader>
           <CardContent>
@@ -136,8 +182,9 @@ const SpectrumResults = ({ address }: SpectrumResultsProps) => {
                   Call 1-888-230-FAST
                 </a>
               </Button>
-              <Button variant="outline" size="lg" className="flex-1">
-                Schedule Callback
+              <Button variant="outline" size="lg" className="flex-1" onClick={openChat}>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat with AI Agent
               </Button>
             </div>
           </CardContent>
