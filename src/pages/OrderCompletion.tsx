@@ -9,10 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Check, Wifi, Phone, Tv } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -71,7 +72,36 @@ const OrderCompletion = () => {
   const { cartItems, getTotalPrice, addToCart } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
+  const [justVerified, setJustVerified] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  // Detect if user arrived via email verification (URL contains auth tokens in hash)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=email'))) {
+      setJustVerified(true);
+      // Get user email after auth completes
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+          setVerifiedEmail(user.email);
+        }
+      });
+    }
+    // Also listen for auth state change in case token exchange is still processing
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=email'))) {
+          setJustVerified(true);
+          setVerifiedEmail(session.user.email ?? null);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -203,6 +233,31 @@ const OrderCompletion = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
+        {/* Email Verified Banner */}
+        {justVerified && (
+          <Card className="mb-6 border-primary/30 bg-primary/5">
+            <CardContent className="flex items-center gap-4 py-5">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email Verified Successfully!
+                </h3>
+                {verifiedEmail && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    <span className="font-medium text-foreground">{verifiedEmail}</span> has been confirmed.
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                  Please fill out the information below to activate your service.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="mb-6">
           <Link to="/upsell" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-4">
             <ArrowLeft className="h-4 w-4" />
