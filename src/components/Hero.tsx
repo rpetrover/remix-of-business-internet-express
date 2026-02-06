@@ -159,6 +159,7 @@ const Hero = () => {
                   onPlaceSelect={handlePlaceSelect}
                   placeholder="Start typing your address..."
                   className="bg-white/90 border-white/30"
+                  containerClassName="hero-autocomplete"
                   required
                 />
               </div>
