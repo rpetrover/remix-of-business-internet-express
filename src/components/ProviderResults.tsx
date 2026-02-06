@@ -275,9 +275,11 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="default" size="lg" className="flex-1">
-                <Phone className="h-4 w-4 mr-2" />
-                Call (555) 123-4567
+              <Button variant="default" size="lg" className="flex-1" asChild>
+                <a href="tel:+18882303278">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call 1-888-230-FAST
+                </a>
               </Button>
               <Button variant="outline" size="lg" className="flex-1">
                 Get a Free Consultation

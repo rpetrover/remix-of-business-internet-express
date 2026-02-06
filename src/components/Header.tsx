@@ -44,7 +44,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-4">
             <div className="flex items-center text-sm text-muted-foreground">
               <Phone className="h-4 w-4 mr-2" />
-              <span className="font-medium">(555) 123-4567</span>
+              <a href="tel:+18882303278" className="font-medium hover:text-primary transition-colors">1-888-230-FAST</a>
             </div>
             <AuthButton />
             <ShoppingCart />
@@ -82,7 +82,7 @@ const Header = () => {
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center text-sm text-muted-foreground mb-3">
                 <Phone className="h-4 w-4 mr-2" />
-                <span className="font-medium">(555) 123-4567</span>
+                <a href="tel:+18882303278" className="font-medium">1-888-230-FAST</a>
               </div>
               <div className="flex items-center space-x-3 mb-3">
                 <AuthButton />
