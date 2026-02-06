@@ -193,7 +193,7 @@ const OrderSuccess = () => {
                   title: "Dedicated Account Specialist Call",
                   description:
                     "A dedicated account specialist will call you to confirm your service details and answer any questions.",
-                  time: "Within 24 hours",
+                  time: "Within 1-2 business days",
                 },
                 {
                   icon: Calendar,
