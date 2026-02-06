@@ -165,7 +165,21 @@ ${KNOWLEDGE_BASE}
 - Guide customers to check availability by entering their address on the website
 - Recommend specific plans based on the customer's business size, usage, and location
 - Handle common support questions (billing, upgrades, outages)
-- For complex issues, suggest contacting support directly or filling out the contact form
+- **COMPLETE ORDERS**: When a customer is ready to order, collect all required information and submit the order
+
+## ORDER COLLECTION PROCESS
+When a customer wants to place an order or has selected a plan they want, you MUST collect the following information:
+1. **Business/Customer Name** — the company or person name
+2. **Service Address** — full street address
+3. **City, State, ZIP** — separately
+4. **Contact Phone Number**
+5. **Contact Email Address**
+6. **Preferred Provider** — which provider/plan they want (or "best available")
+7. **Service Type** — what they need (internet only, internet + voice, etc.)
+
+Once you have ALL required information, use the submit_order tool to submit the order. Confirm all details with the customer before submitting.
+
+If the customer hasn't selected a specific plan yet, help them find one first based on their address and needs.
 
 ## SALES APPROACH
 - Be consultative, not pushy. Understand the customer's needs before recommending.
@@ -175,6 +189,7 @@ ${KNOWLEDGE_BASE}
 - If asked about a specific provider, give detailed info from the knowledge base.
 - Encourage checking availability at their address as the first step.
 - Mention same-day/next-day installation when relevant — it's a major selling point.
+- When the customer is interested, proactively offer to place the order for them right in the chat.
 
 ## TONE & FORMAT
 - Professional yet approachable and warm
@@ -182,7 +197,8 @@ ${KNOWLEDGE_BASE}
 - Use bullet points for comparisons and lists
 - Use specific pricing and speeds from the knowledge base — don't be vague
 - End with a helpful next step or question when appropriate
-- Never make up information — if you don't know, say so and offer to connect them with a specialist`;
+- Never make up information — if you don't know, say so and offer to connect them with a specialist
+- When collecting order info, be systematic but conversational — don't dump all questions at once`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -200,7 +216,162 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // First, make a non-streaming call to check if the AI wants to use tools
+    const toolCheckResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...messages,
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'submit_order',
+              description: 'Submit an internet service order to Intelisys for processing. Call this ONLY when you have collected ALL required customer information: name, full address, phone, email, and service preferences.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customer_name: { type: 'string', description: 'Business or customer name' },
+                  service_address: { type: 'string', description: 'Street address for service' },
+                  city: { type: 'string', description: 'City' },
+                  state: { type: 'string', description: 'State abbreviation (e.g., NY, CA)' },
+                  zip: { type: 'string', description: 'ZIP code' },
+                  contact_phone: { type: 'string', description: 'Contact phone number' },
+                  contact_email: { type: 'string', description: 'Contact email address' },
+                  preferred_provider: { type: 'string', description: 'Preferred internet provider' },
+                  selected_plan: { type: 'string', description: 'Selected plan name/details' },
+                  speed: { type: 'string', description: 'Selected speed tier' },
+                  monthly_price: { type: 'number', description: 'Monthly price' },
+                  service_type: { type: 'string', description: 'Type of service requested' },
+                  notes: { type: 'string', description: 'Any additional notes or special requests' },
+                },
+                required: ['customer_name', 'service_address', 'city', 'state', 'zip', 'contact_phone', 'contact_email'],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+      }),
+    });
+
+    if (!toolCheckResponse.ok) {
+      if (toolCheckResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }), {
+          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (toolCheckResponse.status === 402) {
+        return new Response(JSON.stringify({ error: 'Service temporarily unavailable.' }), {
+          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const errorText = await toolCheckResponse.text();
+      console.error('AI gateway error:', toolCheckResponse.status, errorText);
+      return new Response(JSON.stringify({ error: 'AI service error' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const toolCheckData = await toolCheckResponse.json();
+    const choice = toolCheckData.choices?.[0];
+
+    // Check if the AI wants to call the submit_order tool
+    if (choice?.message?.tool_calls?.length > 0) {
+      const toolCall = choice.message.tool_calls[0];
+
+      if (toolCall.function?.name === 'submit_order') {
+        let orderArgs;
+        try {
+          orderArgs = JSON.parse(toolCall.function.arguments);
+        } catch {
+          orderArgs = toolCall.function.arguments;
+        }
+
+        console.log('Submitting order:', JSON.stringify(orderArgs));
+
+        // Call the submit-order edge function internally
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const orderResponse = await fetch(`${supabaseUrl}/functions/v1/submit-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...orderArgs, channel: 'chat' }),
+        });
+
+        const orderResult = await orderResponse.json();
+        console.log('Order result:', JSON.stringify(orderResult));
+
+        // Now get the AI to respond to the user about the order result
+        const followUpMessages = [
+          ...messages,
+          choice.message,
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: orderResult.success
+              ? `Order submitted successfully! Order ID: ${orderResult.order_id}. The order has been sent to our provider network (Intelisys) for processing, and a confirmation email has been sent to the customer at ${orderArgs.contact_email}.`
+              : `Order submission failed: ${orderResult.error || 'Unknown error'}. Please try again or suggest the customer contact us directly.`,
+          },
+        ];
+
+        // Stream the follow-up response
+        const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-3-flash-preview',
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              ...followUpMessages,
+            ],
+            stream: true,
+          }),
+        });
+
+        if (!followUpResponse.ok) {
+          const errorText = await followUpResponse.text();
+          console.error('Follow-up AI error:', followUpResponse.status, errorText);
+          // Return a non-streaming success message as fallback
+          const fallbackMsg = orderResult.success
+            ? `Great news! Your order has been submitted successfully. A confirmation email has been sent to ${orderArgs.contact_email}. Our provider network will process your request, and you'll receive final pricing and installation details within 1-2 business days. Is there anything else I can help you with?`
+            : `I'm sorry, there was an issue submitting your order. Please try again or contact us directly for assistance.`;
+
+          // Format as SSE
+          const encoder = new TextEncoder();
+          const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content: fallbackMsg } }] })}\n\ndata: [DONE]\n\n`;
+          return new Response(encoder.encode(sseData), {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
+
+        return new Response(followUpResponse.body, {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+        });
+      }
+    }
+
+    // No tool call — regular chat response, stream it
+    // If the non-streaming response already has content, convert to SSE
+    if (choice?.message?.content) {
+      const content = choice.message.content;
+      const encoder = new TextEncoder();
+      const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`;
+      return new Response(encoder.encode(sseData), {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+      });
+    }
+
+    // Fallback: make a streaming call without tools
+    const streamResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -216,28 +387,15 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Service temporarily unavailable.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+    if (!streamResponse.ok) {
+      const errorText = await streamResponse.text();
+      console.error('Stream AI error:', streamResponse.status, errorText);
       return new Response(JSON.stringify({ error: 'AI service error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(response.body, {
+    return new Response(streamResponse.body, {
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     });
   } catch (error) {

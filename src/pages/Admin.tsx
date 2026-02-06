@@ -3,16 +3,17 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
 import AdminAIConfig from '@/components/admin/AdminAIConfig';
 import AdminVoiceAgent from '@/components/admin/AdminVoiceAgent';
+import AdminOrders from '@/components/admin/AdminOrders';
 
 const Admin = () => {
   const { isAdmin, isLoading, user } = useAdminAuth();
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeTab, setActiveTab] = useState('orders');
 
   if (isLoading) {
     return (
@@ -76,6 +77,10 @@ const Admin = () => {
       <div className="max-w-[1400px] mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card border border-border h-auto p-1 flex-wrap">
+            <TabsTrigger value="orders" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Package className="h-4 w-4" />
+              Orders
+            </TabsTrigger>
             <TabsTrigger value="inbox" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Mail className="h-4 w-4" />
               Inbox
@@ -97,6 +102,10 @@ const Admin = () => {
               Voice Agent
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="orders">
+            <AdminOrders />
+          </TabsContent>
 
           <TabsContent value="inbox">
             <AdminEmailInbox />
