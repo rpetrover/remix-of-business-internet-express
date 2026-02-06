@@ -33,7 +33,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`
+          emailRedirectTo: `https://www.businessinternetexpress.com/order-completion`
         }
       });
 
