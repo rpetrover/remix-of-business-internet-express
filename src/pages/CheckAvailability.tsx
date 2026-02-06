@@ -12,6 +12,7 @@ import { getAllAvailableProviders } from "@/data/providers";
 import { supabase } from "@/integrations/supabase/client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
+import { updateCustomerContext } from "@/hooks/useCustomerContext";
 
 const CheckAvailabilityPage = () => {
   const [formData, setFormData] = useState({
@@ -78,10 +79,30 @@ const CheckAvailabilityPage = () => {
       const fccMapUrl = geocodeData?.fccMapUrl || "";
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
 
+      // Save customer context for pre-filling the order form
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: verifiedZip.substring(0, 5),
+        businessName: formData.businessName,
+        phone: formData.phone?.replace(/\D/g, ''),
+      });
+
       navigate("/availability/results", {
         state: { address: verifiedAddress, allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable, fccMapUrl },
       });
     } catch {
+      // Save customer context even on fallback
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        businessName: formData.businessName,
+        phone: formData.phone?.replace(/\D/g, ''),
+      });
+
       const result = getAllAvailableProviders(formData.zipCode);
       navigate("/availability/results", {
         state: { address: getFullAddress(), allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable },

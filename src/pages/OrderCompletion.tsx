@@ -14,6 +14,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerContext';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -102,21 +103,31 @@ const OrderCompletion = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Pre-fill from customer context (availability check + lead capture data)
+  const savedContext = getCustomerContext();
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    businessName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    firstName: savedContext.firstName || '',
+    lastName: savedContext.lastName || '',
+    businessName: savedContext.businessName || '',
+    email: savedContext.email || '',
+    phone: savedContext.phone || '',
+    address: savedContext.address || '',
+    city: savedContext.city || '',
+    state: savedContext.state || '',
+    zipCode: savedContext.zipCode || '',
     phoneNumberType: 'new' as 'transfer' | 'new',
     existingNumber: '',
     preferredAreaCode: '212',
     smsConsent: false,
   });
+
+  // Also pre-fill email from verified auth user if available
+  useEffect(() => {
+    if (verifiedEmail && !formData.email) {
+      setFormData(prev => ({ ...prev, email: verifiedEmail }));
+    }
+  }, [verifiedEmail]);
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -229,6 +240,9 @@ const OrderCompletion = () => {
         title: "Order Submitted!",
         description: "We'll be in touch within 1-2 business days to schedule installation.",
       });
+      
+      // Clear saved customer context after successful order
+      clearCustomerContext();
       
       // Navigate to success page with order details
       navigate('/order-success', { state: orderData, replace: true });

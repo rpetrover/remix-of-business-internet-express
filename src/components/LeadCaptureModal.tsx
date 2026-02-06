@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { updateCustomerContext } from "@/hooks/useCustomerContext";
 
 interface LeadCaptureModalProps {
   open: boolean;
@@ -71,6 +72,15 @@ const LeadCaptureModal = ({
         // Don't block the user — still continue to checkout
       }
 
+      // Save lead data to customer context for order form pre-fill
+      const nameParts = formData.name.trim().split(/\s+/);
+      updateCustomerContext({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+      });
+
       onContinue({
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -78,7 +88,15 @@ const LeadCaptureModal = ({
       });
     } catch (err) {
       console.error("Lead capture error:", err);
-      // Still continue even if save fails
+      // Still save to context and continue even if DB save fails
+      const nameParts = formData.name.trim().split(/\s+/);
+      updateCustomerContext({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+      });
+
       onContinue({
         email: formData.email.trim(),
         phone: formData.phone.trim(),
