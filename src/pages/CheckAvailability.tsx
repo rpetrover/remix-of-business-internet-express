@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { getAllAvailableProviders } from "@/data/providers";
+import { supabase } from "@/integrations/supabase/client";
 
 const CheckAvailabilityPage = () => {
   const [formData, setFormData] = useState({
@@ -55,18 +56,25 @@ const CheckAvailabilityPage = () => {
 
     setIsChecking(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
+        body: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zipCode },
+      });
 
-    const fullAddress = getFullAddress();
-    const result = getAllAvailableProviders(formData.zipCode);
+      const verifiedZip = geocodeData?.location?.zip || formData.zipCode;
+      const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
+      const fccMapUrl = geocodeData?.fccMapUrl || "";
+      const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
 
-    navigate("/availability/results", {
-      state: {
-        address: fullAddress,
-        allProviders: result.allProviders,
-        spectrumAvailable: result.spectrumAvailable,
-      },
-    });
+      navigate("/availability/results", {
+        state: { address: verifiedAddress, allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable, fccMapUrl },
+      });
+    } catch {
+      const result = getAllAvailableProviders(formData.zipCode);
+      navigate("/availability/results", {
+        state: { address: getFullAddress(), allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable },
+      });
+    }
 
     setIsChecking(false);
   };

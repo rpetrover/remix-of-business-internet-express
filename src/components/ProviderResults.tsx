@@ -20,6 +20,7 @@ interface ProviderResultsProps {
   address: string;
   allProviders: InternetProvider[];
   spectrumAvailable: boolean;
+  fccMapUrl?: string;
 }
 
 const ProviderPlanCards = ({ provider, isPreferred }: { provider: InternetProvider; isPreferred: boolean }) => (
@@ -146,7 +147,7 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
   );
 };
 
-const ProviderResults = ({ address, allProviders, spectrumAvailable }: ProviderResultsProps) => {
+const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }: ProviderResultsProps) => {
   const hasProviders = allProviders.length > 0;
   const preferredProvider = spectrumAvailable ? allProviders.find((p) => p.id === "spectrum") : null;
   const otherProviders = allProviders.filter((p) => p.id !== "spectrum");
@@ -169,6 +170,16 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable }: ProviderR
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Results for <span className="font-semibold text-foreground">{address}</span>
           </p>
+          {fccMapUrl && (
+            <a
+              href={fccMapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-3 text-sm text-primary hover:underline"
+            >
+              View official FCC Broadband Map data for this address →
+            </a>
+          )}
         </div>
 
         {/* Preferred Provider (Spectrum) */}

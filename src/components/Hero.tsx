@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Zap, Clock, Wrench, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAllAvailableProviders } from "@/data/providers";
+import { supabase } from "@/integrations/supabase/client";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
@@ -48,18 +49,39 @@ const Hero = () => {
     }
 
     setIsChecking(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const fullAddress = getFullAddress();
-    const result = getAllAvailableProviders(formData.zipCode);
+    try {
+      // Step 1: Validate address via Census geocoder
+      const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
+        body: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zipCode },
+      });
 
-    navigate("/availability/results", {
-      state: {
-        address: fullAddress,
-        allProviders: result.allProviders,
-        spectrumAvailable: result.spectrumAvailable,
-      },
-    });
+      const verifiedZip = geocodeData?.location?.zip || formData.zipCode;
+      const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
+      const fccMapUrl = geocodeData?.fccMapUrl || "";
+
+      // Step 2: Look up providers using verified ZIP
+      const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
+
+      navigate("/availability/results", {
+        state: {
+          address: verifiedAddress,
+          allProviders: result.allProviders,
+          spectrumAvailable: result.spectrumAvailable,
+          fccMapUrl,
+        },
+      });
+    } catch {
+      // Fallback: use local data if geocoder fails
+      const result = getAllAvailableProviders(formData.zipCode);
+      navigate("/availability/results", {
+        state: {
+          address: getFullAddress(),
+          allProviders: result.allProviders,
+          spectrumAvailable: result.spectrumAvailable,
+        },
+      });
+    }
 
     setIsChecking(false);
   };

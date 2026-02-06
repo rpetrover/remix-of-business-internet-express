@@ -11,6 +11,7 @@ const AvailabilityResults = () => {
   const address = location.state?.address as string | undefined;
   const allProviders = (location.state?.allProviders ?? []) as InternetProvider[];
   const spectrumAvailable = (location.state?.spectrumAvailable ?? false) as boolean;
+  const fccMapUrl = (location.state?.fccMapUrl ?? "") as string;
 
   useEffect(() => {
     if (!address) {
@@ -28,6 +29,7 @@ const AvailabilityResults = () => {
           address={address}
           allProviders={allProviders}
           spectrumAvailable={spectrumAvailable}
+          fccMapUrl={fccMapUrl}
         />
       </div>
       <Footer />
