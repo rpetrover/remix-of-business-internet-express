@@ -4,7 +4,6 @@ import About from "@/components/About";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import VideoSplashBanner from "@/components/VideoSplashBanner";
-import AvailabilityChecker from "@/components/AvailabilityChecker";
 
 const Index = () => {
   return (
@@ -15,7 +14,6 @@ const Index = () => {
         <div id="home">
           <Hero />
         </div>
-        <AvailabilityChecker />
         <div id="about">
           <About />
         </div>
