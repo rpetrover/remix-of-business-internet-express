@@ -26,6 +26,13 @@ const ChatWidget = () => {
     }
   }, [isOpen]);
 
+  // Listen for external open requests (e.g. from Support page)
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener("open-chat-widget", handler);
+    return () => window.removeEventListener("open-chat-widget", handler);
+  }, []);
+
   const handleSend = () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
