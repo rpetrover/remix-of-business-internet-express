@@ -33,7 +33,7 @@ Shared business internet delivered over cable (DOCSIS/HFC), fiber-to-the-premise
 **Best for:** Small to mid-size businesses, retail, restaurants, small offices, remote workers.
 
 **Key features across providers:**
-- Speeds from 25 Mbps to 5 Gbps depending on provider and technology
+- Speeds from 25 Mbps to 30 Gbps depending on provider and technology
 - No data caps on most business plans
 - Free modem/router and professional installation on many plans
 - 24/7 U.S.-based technical support
@@ -53,8 +53,8 @@ A private, symmetrical fiber connection exclusively for your business — bandwi
 - Proactive fault detection and rapid repair (often 4-hour mean time to repair)
 - Managed router/CPE included
 - Static IP blocks (/29, /28, or larger)
-- Scalable from 50 Mbps to 10 Gbps+
-- Pricing: typically $249–$949/month for 50 Mbps–1 Gbps; 10 Gbps is custom-quoted
+- Scalable from 50 Mbps to 30 Gbps+
+- Pricing: typically $249–$949/month for 50 Mbps–1 Gbps; 10 Gbps+ is custom-quoted
 
 ### 3. SD-WAN (Software-Defined Wide Area Network)
 Intelligent networking that combines multiple internet connections (broadband + DIA + LTE/5G) into one optimized, resilient link. Automatically routes traffic over the best available path.
