@@ -8,10 +8,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Internet", href: "/#plans" },
-    { name: "Phone", href: "/phone" },
-    { name: "TV", href: "/tv" },
-    { name: "Mobile", href: "/mobile" },
+    { name: "Check Availability", href: "/check-availability" },
     { name: "Enterprise", href: "/enterprise" },
     { name: "Support", href: "/support" },
   ];
