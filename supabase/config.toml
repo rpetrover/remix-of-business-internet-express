@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.submit-order]
 verify_jwt = false
+
+[functions.process-abandoned-checkouts]
+verify_jwt = false
+
+[functions.outbound-call-handler]
+verify_jwt = false

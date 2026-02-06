@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Phone, Wifi, Tv, Smartphone, Star, MessageCircle } from "lucide-react";
 import { spectrumPlans, type InternetPlan } from "@/data/providers";
 import { useCart } from "@/hooks/useCart";
+import LeadCaptureModal from "@/components/LeadCaptureModal";
 
 interface SpectrumResultsProps {
   address: string;
@@ -16,15 +18,25 @@ const parsePrice = (price: string): number => {
 
 const SpectrumResults = ({ address }: SpectrumResultsProps) => {
   const { addToCart } = useCart();
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<InternetPlan | null>(null);
 
   const handleSelectPlan = (plan: InternetPlan) => {
-    addToCart({
-      product_name: `Spectrum Business — ${plan.name}`,
-      product_type: "internet",
-      price: parsePrice(plan.price),
-      speed: plan.speed,
-      features: plan.features,
-    });
+    setPendingPlan(plan);
+    setLeadModalOpen(true);
+  };
+
+  const handleLeadContinue = () => {
+    setLeadModalOpen(false);
+    if (pendingPlan) {
+      addToCart({
+        product_name: `Spectrum Business — ${pendingPlan.name}`,
+        product_type: "internet",
+        price: parsePrice(pendingPlan.price),
+        speed: pendingPlan.speed,
+        features: pendingPlan.features,
+      });
+    }
   };
 
   const openChat = () => {
@@ -189,6 +201,16 @@ const SpectrumResults = ({ address }: SpectrumResultsProps) => {
             </div>
           </CardContent>
         </Card>
+        {/* Lead Capture Modal */}
+        <LeadCaptureModal
+          open={leadModalOpen}
+          onOpenChange={setLeadModalOpen}
+          planName={pendingPlan?.name || ""}
+          providerName="Spectrum Business"
+          price={pendingPlan ? parsePrice(pendingPlan.price) : 0}
+          speed={pendingPlan?.speed}
+          onContinue={handleLeadContinue}
+        />
       </div>
     </section>
   );

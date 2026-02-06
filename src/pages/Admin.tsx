@@ -3,13 +3,14 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package, UserCheck } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
 import AdminAIConfig from '@/components/admin/AdminAIConfig';
 import AdminVoiceAgent from '@/components/admin/AdminVoiceAgent';
 import AdminOrders from '@/components/admin/AdminOrders';
+import AdminFollowUps from '@/components/admin/AdminFollowUps';
 
 const Admin = () => {
   const { isAdmin, isLoading, user } = useAdminAuth();
@@ -101,6 +102,10 @@ const Admin = () => {
               <Phone className="h-4 w-4" />
               Voice Agent
             </TabsTrigger>
+            <TabsTrigger value="follow-ups" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <UserCheck className="h-4 w-4" />
+              Follow-ups
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
@@ -125,6 +130,10 @@ const Admin = () => {
 
           <TabsContent value="voice-agent">
             <AdminVoiceAgent />
+          </TabsContent>
+
+          <TabsContent value="follow-ups">
+            <AdminFollowUps />
           </TabsContent>
         </Tabs>
       </div>
