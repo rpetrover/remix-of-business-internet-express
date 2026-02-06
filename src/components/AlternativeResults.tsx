@@ -2,15 +2,27 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Phone, Star, ChevronDown, ChevronUp, Globe, AlertTriangle } from "lucide-react";
-import { type InternetProvider } from "@/data/providers";
+import { CheckCircle, XCircle, Phone, Star, ChevronDown, ChevronUp, Globe, AlertTriangle, MessageCircle } from "lucide-react";
+import { type InternetProvider, type InternetPlan } from "@/data/providers";
+import { useCart } from "@/hooks/useCart";
 
 interface AlternativeResultsProps {
   address: string;
   availableProviders: InternetProvider[];
 }
 
-const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
+const parsePrice = (price: string): number => {
+  const match = price.replace(/[^0-9.]/g, "");
+  return parseFloat(match) || 0;
+};
+
+const ProviderCard = ({
+  provider,
+  onSelectPlan,
+}: {
+  provider: InternetProvider;
+  onSelectPlan: (plan: InternetPlan, provider: InternetProvider) => void;
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -21,7 +33,7 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
       >
         <div className="flex items-center justify-between">
           <div>
-          <CardTitle className="text-xl flex items-center gap-2">
+            <CardTitle className="text-xl flex items-center gap-2">
               {provider.logo ? (
                 <img
                   src={provider.logo}
@@ -87,6 +99,10 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
                     variant={plan.recommended ? "default" : "outline"}
                     size="sm"
                     className="w-full text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPlan(plan, provider);
+                    }}
                   >
                     Select Plan
                   </Button>
@@ -101,7 +117,22 @@ const ProviderCard = ({ provider }: { provider: InternetProvider }) => {
 };
 
 const AlternativeResults = ({ address, availableProviders }: AlternativeResultsProps) => {
+  const { addToCart } = useCart();
   const hasProviders = availableProviders.length > 0;
+
+  const handleSelectPlan = (plan: InternetPlan, provider: InternetProvider) => {
+    addToCart({
+      product_name: `${provider.name} — ${plan.name}`,
+      product_type: "internet",
+      price: parsePrice(plan.price),
+      speed: plan.speed,
+      features: plan.features,
+    });
+  };
+
+  const openChat = () => {
+    window.dispatchEvent(new CustomEvent("open-chat-widget"));
+  };
 
   return (
     <section className="py-16 bg-secondary/30 animate-in fade-in duration-500">
@@ -135,7 +166,7 @@ const AlternativeResults = ({ address, availableProviders }: AlternativeResultsP
               Available Internet Providers in Your Area
             </h3>
             {availableProviders.map((provider) => (
-              <ProviderCard key={provider.id} provider={provider} />
+              <ProviderCard key={provider.id} provider={provider} onSelectPlan={handleSelectPlan} />
             ))}
           </div>
         )}
@@ -161,7 +192,7 @@ const AlternativeResults = ({ address, availableProviders }: AlternativeResultsP
           <CardHeader>
             <CardTitle className="text-2xl">Not Sure Which Provider Is Right?</CardTitle>
             <p className="text-muted-foreground">
-              Our experts can help you find the best internet solution for your business location and needs
+              Our AI agents can help you find the best internet solution for your business
             </p>
           </CardHeader>
           <CardContent>
@@ -172,8 +203,9 @@ const AlternativeResults = ({ address, availableProviders }: AlternativeResultsP
                   Call 1-888-230-FAST
                 </a>
               </Button>
-              <Button variant="outline" size="lg" className="flex-1">
-                Get a Free Consultation
+              <Button variant="outline" size="lg" className="flex-1" onClick={openChat}>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat with AI Agent
               </Button>
             </div>
           </CardContent>

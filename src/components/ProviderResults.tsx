@@ -14,8 +14,10 @@ import {
   Award,
   Wifi,
   Building2,
+  MessageCircle,
 } from "lucide-react";
-import { type InternetProvider } from "@/data/providers";
+import { type InternetProvider, type InternetPlan } from "@/data/providers";
+import { useCart } from "@/hooks/useCart";
 
 interface ProviderResultsProps {
   address: string;
@@ -24,7 +26,20 @@ interface ProviderResultsProps {
   fccMapUrl?: string;
 }
 
-const ProviderPlanCards = ({ provider, isPreferred }: { provider: InternetProvider; isPreferred: boolean }) => (
+const parsePrice = (price: string): number => {
+  const match = price.replace(/[^0-9.]/g, "");
+  return parseFloat(match) || 0;
+};
+
+const ProviderPlanCards = ({
+  provider,
+  isPreferred,
+  onSelectPlan,
+}: {
+  provider: InternetProvider;
+  isPreferred: boolean;
+  onSelectPlan: (plan: InternetPlan, provider: InternetProvider) => void;
+}) => (
   <div className="grid sm:grid-cols-3 gap-4">
     {provider.plans.map((plan, index) => (
       <Card
@@ -65,6 +80,7 @@ const ProviderPlanCards = ({ provider, isPreferred }: { provider: InternetProvid
             variant={plan.recommended ? "default" : "outline"}
             size="sm"
             className="w-full text-xs"
+            onClick={() => onSelectPlan(plan, provider)}
           >
             Select Plan
           </Button>
@@ -92,7 +108,13 @@ const ProviderLogo = ({ provider, size = "md" }: { provider: InternetProvider; s
   return null;
 };
 
-const PreferredProviderCard = ({ provider }: { provider: InternetProvider }) => (
+const PreferredProviderCard = ({
+  provider,
+  onSelectPlan,
+}: {
+  provider: InternetProvider;
+  onSelectPlan: (plan: InternetPlan, provider: InternetProvider) => void;
+}) => (
   <Card className="border-2 border-primary shadow-lg overflow-hidden">
     <div className="bg-primary text-primary-foreground px-6 py-3 flex items-center gap-2">
       <Award className="h-5 w-5" />
@@ -120,12 +142,18 @@ const PreferredProviderCard = ({ provider }: { provider: InternetProvider }) => 
       <p className="text-sm text-muted-foreground mt-2">{provider.description}</p>
     </CardHeader>
     <CardContent>
-      <ProviderPlanCards provider={provider} isPreferred />
+      <ProviderPlanCards provider={provider} isPreferred onSelectPlan={onSelectPlan} />
     </CardContent>
   </Card>
 );
 
-const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
+const OtherProviderCard = ({
+  provider,
+  onSelectPlan,
+}: {
+  provider: InternetProvider;
+  onSelectPlan: (plan: InternetPlan, provider: InternetProvider) => void;
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -136,7 +164,7 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
       >
         <div className="flex items-center justify-between">
           <div>
-          <CardTitle className="text-xl flex items-center gap-2">
+            <CardTitle className="text-xl flex items-center gap-2">
               {provider.logo ? (
                 <ProviderLogo provider={provider} />
               ) : provider.dedicatedFiber ? (
@@ -169,7 +197,7 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
 
       {expanded && (
         <CardContent className="pt-0">
-          <ProviderPlanCards provider={provider} isPreferred={false} />
+          <ProviderPlanCards provider={provider} isPreferred={false} onSelectPlan={onSelectPlan} />
         </CardContent>
       )}
     </Card>
@@ -177,11 +205,26 @@ const OtherProviderCard = ({ provider }: { provider: InternetProvider }) => {
 };
 
 const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }: ProviderResultsProps) => {
+  const { addToCart } = useCart();
   const hasProviders = allProviders.length > 0;
   const preferredProvider = spectrumAvailable ? allProviders.find((p) => p.id === "spectrum") : null;
   const otherProviders = allProviders.filter((p) => p.id !== "spectrum");
   const broadbandProviders = otherProviders.filter((p) => !p.dedicatedFiber);
   const dedicatedFiberProviders = otherProviders.filter((p) => p.dedicatedFiber);
+
+  const handleSelectPlan = (plan: InternetPlan, provider: InternetProvider) => {
+    addToCart({
+      product_name: `${provider.name} — ${plan.name}`,
+      product_type: "internet",
+      price: parsePrice(plan.price),
+      speed: plan.speed,
+      features: plan.features,
+    });
+  };
+
+  const openChat = () => {
+    window.dispatchEvent(new CustomEvent("open-chat-widget"));
+  };
 
   return (
     <section className="py-16 bg-secondary/30 animate-in fade-in duration-500">
@@ -217,7 +260,7 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
         {/* Preferred Provider (Spectrum) */}
         {preferredProvider && (
           <div className="max-w-5xl mx-auto mb-8">
-            <PreferredProviderCard provider={preferredProvider} />
+            <PreferredProviderCard provider={preferredProvider} onSelectPlan={handleSelectPlan} />
           </div>
         )}
 
@@ -228,7 +271,7 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
               {preferredProvider ? "Other Broadband Providers" : "Broadband Providers in Your Area"}
             </h3>
             {broadbandProviders.map((provider) => (
-              <OtherProviderCard key={provider.id} provider={provider} />
+              <OtherProviderCard key={provider.id} provider={provider} onSelectPlan={handleSelectPlan} />
             ))}
           </div>
         )}
@@ -244,7 +287,7 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
               Enterprise-grade dedicated internet with guaranteed bandwidth, SLA-backed uptime, and symmetrical speeds
             </p>
             {dedicatedFiberProviders.map((provider) => (
-              <OtherProviderCard key={provider.id} provider={provider} />
+              <OtherProviderCard key={provider.id} provider={provider} onSelectPlan={handleSelectPlan} />
             ))}
           </div>
         )}
@@ -270,7 +313,7 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
           <CardHeader>
             <CardTitle className="text-2xl">Not Sure Which Provider Is Right?</CardTitle>
             <p className="text-muted-foreground">
-              Our experts can help you find the best internet solution for your business
+              Our AI agents can help you find the best internet solution for your business
             </p>
           </CardHeader>
           <CardContent>
@@ -281,8 +324,9 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
                   Call 1-888-230-FAST
                 </a>
               </Button>
-              <Button variant="outline" size="lg" className="flex-1">
-                Get a Free Consultation
+              <Button variant="outline" size="lg" className="flex-1" onClick={openChat}>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat with AI Agent
               </Button>
             </div>
           </CardContent>
