@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Clock, Wrench, Search, Loader2 } from "lucide-react";
+import { Zap, Clock, Wrench, Search, Loader2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAllAvailableProviders } from "@/data/providers";
 import { supabase } from "@/integrations/supabase/client";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import type { PlaceResult } from "@/hooks/useGooglePlaces";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +23,15 @@ const Hero = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setFormData({
+      address: place.address,
+      city: place.city,
+      state: place.state,
+      zipCode: place.zipCode,
+    });
   };
 
   const getFullAddress = () => {
@@ -51,7 +62,6 @@ const Hero = () => {
     setIsChecking(true);
 
     try {
-      // Step 1: Validate address via Census geocoder
       const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
         body: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zipCode },
       });
@@ -59,8 +69,6 @@ const Hero = () => {
       const verifiedZip = geocodeData?.location?.zip || formData.zipCode;
       const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
       const fccMapUrl = geocodeData?.fccMapUrl || "";
-
-      // Step 2: Look up providers using verified ZIP
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
 
       navigate("/availability/results", {
@@ -72,7 +80,6 @@ const Hero = () => {
         },
       });
     } catch {
-      // Fallback: use local data if geocoder fails
       const result = getAllAvailableProviders(formData.zipCode);
       navigate("/availability/results", {
         state: {
@@ -119,6 +126,15 @@ const Hero = () => {
                 <span className="font-medium">Easy, Hassle-Free Setup</span>
               </div>
             </div>
+
+            {/* Disclaimer */}
+            <div className="mt-4 flex items-start gap-2 text-primary-foreground/50 text-xs max-w-xl">
+              <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <p>
+                Installation in under 24 hours is a best-effort goal and is not guaranteed. 
+                Actual installation times vary by provider, location, and service availability.
+              </p>
+            </div>
           </div>
 
           {/* Right: Availability Form */}
@@ -136,11 +152,12 @@ const Hero = () => {
                 <Label htmlFor="hero-address" className="text-primary-foreground/90">
                   Street Address <span className="text-accent">*</span>
                 </Label>
-                <Input
+                <AddressAutocomplete
                   id="hero-address"
                   value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  placeholder="123 Business Street"
+                  onChange={(value) => handleInputChange("address", value)}
+                  onPlaceSelect={handlePlaceSelect}
+                  placeholder="Start typing your address..."
                   className="bg-white/90 border-white/30"
                   required
                 />

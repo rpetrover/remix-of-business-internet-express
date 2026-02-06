@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Search, Loader2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { checkSpectrumAvailability, getAvailableProviders } from "@/data/providers";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import type { PlaceResult } from "@/hooks/useGooglePlaces";
 
 const AvailabilityChecker = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +23,15 @@ const AvailabilityChecker = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setFormData({
+      address: place.address,
+      city: place.city,
+      state: place.state,
+      zipCode: place.zipCode,
+    });
   };
 
   const getFullAddress = () => {
@@ -49,7 +60,6 @@ const AvailabilityChecker = () => {
     }
 
     setIsChecking(true);
-
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
@@ -94,11 +104,12 @@ const AvailabilityChecker = () => {
                   <Label htmlFor="home-address">
                     Street Address <span className="text-destructive">*</span>
                   </Label>
-                  <Input
+                  <AddressAutocomplete
                     id="home-address"
                     value={formData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                    placeholder="123 Business Street"
+                    onChange={(value) => handleInputChange("address", value)}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="Start typing your address..."
                     required
                   />
                 </div>
