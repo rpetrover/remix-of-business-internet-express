@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAdminAuth = () => {
@@ -6,70 +6,82 @@ export const useAdminAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
+  const checkAdminRole = useCallback(async (currentUser: any) => {
+    if (!currentUser) {
+      setUser(null);
+      setIsAdmin(false);
+      setIsLoading(false);
+      return;
+    }
+
+    setUser(currentUser);
+
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: currentUser.id,
+        _role: 'admin'
+      });
+
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data === true);
+      }
+    } catch (err) {
+      console.error('Admin auth check failed:', err);
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
-    const checkAdmin = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
+    // IMPORTANT: Set up auth state listener FIRST — this catches
+    // magic link tokens from URL hash before getSession runs
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
         if (!isMounted) return;
 
-        if (userError || !user) {
+        console.log('Auth state change:', event, session?.user?.email);
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // User just signed in (e.g. magic link) — reset loading and check role
+          setIsLoading(true);
+          await checkAdminRole(session?.user ?? null);
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setIsAdmin(false);
           setIsLoading(false);
-          return;
-        }
-
-        setUser(user);
-
-        // Check if user has admin role using the has_role function
-        const { data, error } = await supabase.rpc('has_role', {
-          _user_id: user.id,
-          _role: 'admin'
-        });
-
-        if (!isMounted) return;
-
-        if (error) {
-          console.error('Error checking admin role:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data === true);
-        }
-      } catch (err) {
-        console.error('Admin auth check failed:', err);
-        if (isMounted) {
-          setIsAdmin(false);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+        } else if (event === 'INITIAL_SESSION') {
+          // Initial session load — check the session
+          if (session?.user) {
+            await checkAdminRole(session.user);
+          } else {
+            setUser(null);
+            setIsAdmin(false);
+            setIsLoading(false);
+          }
         }
       }
-    };
+    );
 
-    // Set up auth state listener BEFORE initial check
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return;
-      // Reset loading only if we have a meaningful state change
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        setIsAdmin(false);
+    // Fallback timeout — never stay stuck on "Verifying" for more than 5 seconds
+    const timeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.warn('Admin auth check timed out');
         setIsLoading(false);
-      } else {
-        checkAdmin();
       }
-    });
-
-    checkAdmin();
+    }, 5000);
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-  }, []);
+  }, [checkAdminRole]);
 
   return { isAdmin, isLoading, user };
 };
