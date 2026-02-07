@@ -34,7 +34,7 @@ const Admin = () => {
           <Shield className="h-16 w-16 text-muted-foreground mx-auto" />
           <h1 className="text-2xl font-bold text-foreground">Admin Access Required</h1>
           <p className="text-muted-foreground">Please sign in to access the admin panel.</p>
-          <Link to="/auth">
+          <Link to="/auth?returnTo=/admin">
             <Button>Sign In</Button>
           </Link>
         </div>
