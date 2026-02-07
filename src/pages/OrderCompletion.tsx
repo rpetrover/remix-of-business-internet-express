@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,7 +74,7 @@ const AREA_CODES = [
 
 
 const OrderCompletion = () => {
-  const { cartItems, getTotalPrice, addToCart } = useCart();
+  const { cartItems, getTotalPrice, addToCart, clearCart } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { executeRecaptcha } = useRecaptcha();
@@ -136,6 +136,7 @@ const OrderCompletion = () => {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const orderSubmittedRef = useRef(false);
 
   // Give the cart time to load/migrate after auth before redirecting
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -148,7 +149,7 @@ const OrderCompletion = () => {
   }, []);
 
   useEffect(() => {
-    if (initialLoadDone && cartItems.length === 0) {
+    if (initialLoadDone && cartItems.length === 0 && !orderSubmittedRef.current) {
       navigate('/');
     }
   }, [cartItems, navigate, initialLoadDone]);
@@ -319,8 +320,10 @@ const OrderCompletion = () => {
       );
       setUserData(formData.email, formData.phone);
       
-      // Clear saved customer context after successful order
+      // Clear saved customer context and cart after successful order
       clearCustomerContext();
+      orderSubmittedRef.current = true;
+      await clearCart();
       
       // Navigate to success page with order details
       navigate('/order-success', { state: orderData, replace: true });
