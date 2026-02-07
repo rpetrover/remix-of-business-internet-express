@@ -3,19 +3,22 @@ import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const AuthButton = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Get current user
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
@@ -23,41 +26,42 @@ const AuthButton = () => {
   }, []);
 
   const handleSignOut = async () => {
+    setIsSigningOut(true);
     try {
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-      if (error) {
-        console.error('Sign out error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to sign out. Please try again.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Signed Out",
-          description: "You have been successfully signed out"
-        });
-        // Force reload to clear all cached state
-        window.location.href = '/';
-      }
+      // Clear local storage first to ensure clean state
+      const keysToRemove = Object.keys(localStorage).filter(
+        (key) => key.startsWith('sb-') || key.startsWith('supabase')
+      );
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+      await supabase.auth.signOut();
+
+      setUser(null);
+      toast({
+        title: 'Signed Out',
+        description: 'You have been successfully signed out',
+      });
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('Sign out exception:', err);
-      // Force sign out even on error
+      // Force clean state even on error
       localStorage.clear();
-      window.location.href = '/';
+      setUser(null);
+      navigate('/', { replace: true });
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
   const handleSignIn = () => {
-    // Redirect to auth page (we'll create this next)
-    window.location.href = '/auth';
+    navigate('/auth');
   };
 
   if (user) {
     return (
-      <Button variant="outline" size="sm" onClick={handleSignOut}>
+      <Button variant="outline" size="sm" onClick={handleSignOut} disabled={isSigningOut}>
         <LogOut className="h-4 w-4 mr-2" />
-        Sign Out
+        {isSigningOut ? 'Signing Out...' : 'Sign Out'}
       </Button>
     );
   }
