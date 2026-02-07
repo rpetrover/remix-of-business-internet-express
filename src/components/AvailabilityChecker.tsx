@@ -105,11 +105,12 @@ const AvailabilityChecker = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="home-businessName">Business Name</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="home-businessName"
                     value={formData.businessName}
-                    onChange={(e) => handleInputChange("businessName", e.target.value)}
-                    placeholder="Your Business Name"
+                    onChange={(value) => handleInputChange("businessName", value)}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="Search by business name..."
                   />
                 </div>
 

@@ -189,11 +189,12 @@ const Hero = () => {
                 <Label htmlFor="hero-businessName" className="text-primary-foreground/90">
                   Business Name
                 </Label>
-                <Input
+                <AddressAutocomplete
                   id="hero-businessName"
                   value={formData.businessName}
-                  onChange={(e) => handleInputChange("businessName", e.target.value)}
-                  placeholder="Your Business Name"
+                  onChange={(value) => handleInputChange("businessName", value)}
+                  onPlaceSelect={handlePlaceSelect}
+                  placeholder="Search by business name..."
                   className="bg-white/90 border-white/30"
                 />
               </div>
