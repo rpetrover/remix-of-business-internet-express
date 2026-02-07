@@ -229,12 +229,46 @@ const OrderCompletion = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate order submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const customerName = `${formData.firstName} ${formData.lastName}`;
+      const totalPrice = getTotalPrice();
+
+      // Build items summary for notes
+      const itemsSummary = cartItems
+        .map(item => `${item.product_name} - $${item.price}/mo${item.speed ? ` (${item.speed})` : ''}`)
+        .join('; ');
+
+      // Submit order via edge function (sends customer + admin + Intelisys emails)
+      const { data: submitResult, error: submitError } = await supabase.functions.invoke("submit-order", {
+        body: {
+          customer_name: customerName,
+          service_address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip: formData.zipCode,
+          contact_phone: formData.phone,
+          contact_email: formData.email,
+          service_type: itemsSummary || "Business internet service only",
+          preferred_provider: cartItems[0]?.product_name?.split('—')[0]?.trim() || null,
+          selected_plan: cartItems[0]?.product_name || null,
+          speed: cartItems[0]?.speed || null,
+          monthly_price: totalPrice,
+          channel: "web",
+          notes: formData.businessName ? `Business: ${formData.businessName}` : null,
+          cart_items: cartItems.map(item => ({
+            product_name: item.product_name,
+            price: item.price,
+            speed: item.speed,
+            is_bundle: item.is_bundle,
+          })),
+          business_name: formData.businessName,
+        },
+      });
+
+      if (submitError) throw submitError;
+
       // Build order data to pass to success page
       const orderData = {
-        customerName: `${formData.firstName} ${formData.lastName}`,
+        customerName,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
@@ -247,7 +281,8 @@ const OrderCompletion = () => {
           speed: item.speed,
           is_bundle: item.is_bundle,
         })),
-        totalPrice: getTotalPrice(),
+        totalPrice,
+        orderId: submitResult?.order_id,
       };
       
       toast({
