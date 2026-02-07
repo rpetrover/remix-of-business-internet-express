@@ -168,7 +168,39 @@ export const useCart = () => {
     }
   };
 
-  const addToCart = async (item: Omit<CartItem, 'id'>) => {
+  const addItemDirect = async (item: Omit<CartItem, 'id'>) => {
+    if (user) {
+      const { error } = await supabase
+        .from('cart_items')
+        .upsert({
+          user_id: user.id,
+          product_name: item.product_name,
+          product_type: item.product_type,
+          price: item.price,
+          speed: item.speed,
+          features: item.features,
+          is_bundle: item.is_bundle || false,
+          bundle_components: item.bundle_components || []
+        });
+      if (error) throw error;
+      await loadCartItems();
+    } else {
+      const existingItemIndex = cartItems.findIndex(
+        cartItem => cartItem.product_type === item.product_type
+      );
+      let newCartItems;
+      if (existingItemIndex >= 0) {
+        newCartItems = [...cartItems];
+        newCartItems[existingItemIndex] = { ...item, id: `guest-${Date.now()}` };
+      } else {
+        newCartItems = [...cartItems, { ...item, id: `guest-${Date.now()}` }];
+      }
+      setCartItems(newCartItems);
+      saveGuestCart(newCartItems);
+    }
+  };
+
+  const addToCart = async (item: Omit<CartItem, 'id'>, options?: { skipNavigation?: boolean }) => {
     try {
       // Check if we should suggest a bundle
       const currentTypes = cartItems.map(item => item.product_type);
@@ -179,63 +211,27 @@ export const useCart = () => {
       );
 
       if (suggestedBundle && !cartItems.some(item => item.is_bundle)) {
-        // Ask user if they want the bundle instead
         const useBundle = window.confirm(
           `Would you like the ${suggestedBundle.name} instead? You'll save $${suggestedBundle.savings}!`
         );
         
         if (useBundle) {
-          // Clear existing items and add bundle
           await clearCart();
           await addBundleToCart(suggestedBundle);
           return true;
         }
       }
 
-      if (user) {
-        // User is logged in - save to database
-        const { error } = await supabase
-          .from('cart_items')
-          .upsert({
-            user_id: user.id,
-            product_name: item.product_name,
-            product_type: item.product_type,
-            price: item.price,
-            speed: item.speed,
-            features: item.features,
-            is_bundle: item.is_bundle || false,
-            bundle_components: item.bundle_components || []
-          });
-
-        if (error) throw error;
-        await loadCartItems();
-      } else {
-        // Guest user - save to localStorage
-        const existingItemIndex = cartItems.findIndex(
-          cartItem => cartItem.product_type === item.product_type
-        );
-
-        let newCartItems;
-        if (existingItemIndex >= 0) {
-          // Replace existing item of same type
-          newCartItems = [...cartItems];
-          newCartItems[existingItemIndex] = { ...item, id: `guest-${Date.now()}` };
-        } else {
-          // Add new item
-          newCartItems = [...cartItems, { ...item, id: `guest-${Date.now()}` }];
-        }
-
-        setCartItems(newCartItems);
-        saveGuestCart(newCartItems);
-      }
+      await addItemDirect(item);
 
       toast({
         title: "Added to Cart",
         description: `${item.product_name} has been added to your cart`
       });
       
-      // Navigate to upsell page first
-      navigate('/order-completion');
+      if (!options?.skipNavigation) {
+        navigate('/order-completion');
+      }
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);

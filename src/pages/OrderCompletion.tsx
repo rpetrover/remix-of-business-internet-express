@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerContext';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
+import CheckoutUpsells from '@/components/CheckoutUpsells';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
 import { trackPurchase, trackBeginCheckout, setUserData } from '@/lib/analytics';
@@ -167,7 +168,6 @@ const OrderCompletion = () => {
   );
 
   
-
   const handlePlaceSelect = (place: PlaceResult) => {
     setFormData(prev => ({
       ...prev,
@@ -379,7 +379,12 @@ const OrderCompletion = () => {
           <h1 className="text-3xl font-bold mb-2">Complete Your Order</h1>
           <p className="text-muted-foreground">Enter your business details to finalize your order</p>
         </div>
-
+        {/* Checkout Upsells */}
+        <CheckoutUpsells
+          cartItems={cartItems}
+          onAddItem={(item) => addToCart(item, { skipNavigation: true })}
+          currentTotal={getTotalPrice()}
+        />
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Order Summary */}
