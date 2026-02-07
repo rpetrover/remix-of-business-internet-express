@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +22,7 @@ const Hero = () => {
   const [isChecking, setIsChecking] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { executeRecaptcha } = useRecaptcha();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -63,6 +65,17 @@ const Hero = () => {
     setIsChecking(true);
 
     try {
+      // reCAPTCHA verification
+      const recaptchaToken = await executeRecaptcha("check_availability");
+      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+        body: { token: recaptchaToken, action: "check_availability" },
+      });
+      if (captchaError || !captchaResult?.success) {
+        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
+        setIsChecking(false);
+        return;
+      }
+
       const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
         body: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zipCode },
       });
