@@ -5,7 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink, FileText } from 'lucide-react';
+import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink, FileText, Archive, Trash2, Filter } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Order {
   id: string;
@@ -36,14 +53,24 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (statusFilter === 'active') {
+      query = query.not('status', 'in', '("archived","cancelled")');
+    } else if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to load orders', variant: 'destructive' });
@@ -55,7 +82,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [statusFilter]);
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     const { error } = await supabase
@@ -66,12 +93,30 @@ const AdminOrders = () => {
     if (error) {
       toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
     } else {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      if (newStatus === 'archived' || (statusFilter !== 'all' && statusFilter !== newStatus)) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        if (selectedOrder?.id === orderId) setSelectedOrder(null);
+      } else {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+        }
       }
       toast({ title: 'Updated', description: `Order status changed to ${newStatus}` });
     }
+  };
+
+  const deleteOrder = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from('orders').delete().eq('id', deleteTarget.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to delete order', variant: 'destructive' });
+    } else {
+      setOrders(prev => prev.filter(o => o.id !== deleteTarget.id));
+      if (selectedOrder?.id === deleteTarget.id) setSelectedOrder(null);
+      toast({ title: 'Deleted', description: 'Order permanently deleted' });
+    }
+    setDeleteTarget(null);
   };
 
   const updateIntelisysStatus = async (orderId: string) => {
@@ -98,6 +143,7 @@ const AdminOrders = () => {
       confirmed: 'bg-emerald-500/10 text-emerald-600',
       installed: 'bg-green-600/10 text-green-700',
       cancelled: 'bg-destructive/10 text-destructive',
+      archived: 'bg-muted text-muted-foreground',
     };
     return <Badge className={variants[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
   };
@@ -164,22 +210,40 @@ const AdminOrders = () => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Orders List */}
       <Card className="lg:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Orders ({orders.length})
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={fetchOrders}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
+        <CardHeader className="pb-3 space-y-3">
+          <div className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Orders ({orders.length})
+            </CardTitle>
+            <Button variant="ghost" size="icon" onClick={fetchOrders}>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 text-xs">
+              <Filter className="h-3 w-3 mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active Orders</SelectItem>
+              <SelectItem value="all">All Orders</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="installed">Installed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
+          <ScrollArea className="h-[550px]">
             {orders.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>No orders yet</p>
-                <p className="text-sm mt-1">Orders from chat, email, and phone will appear here.</p>
+                <p>No orders found</p>
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -351,7 +415,6 @@ const AdminOrders = () => {
                     variant={selectedOrder.intelisys_email_sent ? 'outline' : 'default'}
                     onClick={() => {
                       handleSubmitToIntelisys(selectedOrder);
-                      // Mark as sent in DB
                       updateIntelisysStatus(selectedOrder.id);
                     }}
                   >
@@ -377,6 +440,37 @@ const AdminOrders = () => {
                   </Button>
                 ))}
               </div>
+
+              {/* Archive / Delete Actions */}
+              <div className="flex items-center gap-3 pt-2 border-t border-border">
+                {selectedOrder.status !== 'archived' ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStatus(selectedOrder.id, 'archived')}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive Order
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStatus(selectedOrder.id, 'pending')}
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    Restore Order
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setDeleteTarget(selectedOrder)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </Button>
+              </div>
             </CardContent>
           </>
         ) : (
@@ -388,6 +482,28 @@ const AdminOrders = () => {
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order Permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the order for <strong>{deleteTarget?.customer_name}</strong>.
+              This action cannot be undone. Consider archiving instead if you may need this data later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteOrder}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -3,9 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Mail, Phone, UserX, CheckCircle, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RefreshCw, Mail, Phone, UserX, CheckCircle, Clock, TrendingUp, Archive, Trash2, Filter } from "lucide-react";
 
 interface AbandonedCheckout {
   id: string;
@@ -40,16 +51,26 @@ const AdminFollowUps = () => {
   const [actions, setActions] = useState<FollowUpAction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [deleteTarget, setDeleteTarget] = useState<AbandonedCheckout | null>(null);
   const { toast } = useToast();
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      let checkoutQuery = supabase
+        .from("abandoned_checkouts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (statusFilter === "active") {
+        checkoutQuery = checkoutQuery.not("status", "in", '("archived")');
+      } else if (statusFilter !== "all") {
+        checkoutQuery = checkoutQuery.eq("status", statusFilter);
+      }
+
       const [checkoutsRes, actionsRes] = await Promise.all([
-        supabase
-          .from("abandoned_checkouts")
-          .select("*")
-          .order("created_at", { ascending: false }),
+        checkoutQuery,
         supabase
           .from("follow_up_actions")
           .select("*")
@@ -68,7 +89,7 @@ const AdminFollowUps = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [statusFilter]);
 
   const triggerProcessing = async () => {
     setIsProcessing(true);
@@ -99,6 +120,54 @@ const AdminFollowUps = () => {
     }
   };
 
+  const archiveCheckout = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("abandoned_checkouts")
+        .update({ status: "archived" })
+        .eq("id", id);
+      if (error) throw error;
+      setCheckouts(prev => prev.filter(c => c.id !== id));
+      toast({ title: "Archived", description: "Checkout moved to archive." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to archive.", variant: "destructive" });
+    }
+  };
+
+  const deleteCheckout = async () => {
+    if (!deleteTarget) return;
+    try {
+      // Delete related follow-up actions first
+      await supabase.from("follow_up_actions").delete().eq("checkout_id", deleteTarget.id);
+      const { error } = await supabase.from("abandoned_checkouts").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      setCheckouts(prev => prev.filter(c => c.id !== deleteTarget.id));
+      toast({ title: "Deleted", description: "Checkout permanently deleted." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete.", variant: "destructive" });
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const restoreCheckout = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("abandoned_checkouts")
+        .update({ status: "abandoned" })
+        .eq("id", id);
+      if (error) throw error;
+      if (statusFilter === "archived") {
+        setCheckouts(prev => prev.filter(c => c.id !== id));
+      } else {
+        setCheckouts(prev => prev.map(c => c.id === id ? { ...c, status: "abandoned" } : c));
+      }
+      toast({ title: "Restored", description: "Checkout restored to active." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to restore.", variant: "destructive" });
+    }
+  };
+
   // Stats
   const totalLeads = checkouts.length;
   const activeLeads = checkouts.filter((c) => !c.opted_out && !c.converted && c.status === "abandoned").length;
@@ -108,6 +177,7 @@ const AdminFollowUps = () => {
   const callsMade = actions.filter((a) => a.action_type === "call").length;
 
   const getStatusBadge = (checkout: AbandonedCheckout) => {
+    if (checkout.status === "archived") return <Badge variant="secondary">Archived</Badge>;
     if (checkout.converted) return <Badge className="bg-primary/10 text-primary">Converted</Badge>;
     if (checkout.opted_out) return <Badge variant="secondary">Opted Out</Badge>;
     if (checkout.follow_up_count >= 5) return <Badge variant="outline">Sequence Complete</Badge>;
@@ -171,9 +241,22 @@ const AdminFollowUps = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h2 className="text-xl font-bold">Abandoned Checkout Follow-ups</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 w-[150px] text-xs">
+              <Filter className="h-3 w-3 mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="abandoned">Abandoned</SelectItem>
+              <SelectItem value="converted">Converted</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
@@ -210,7 +293,7 @@ const AdminFollowUps = () => {
               {checkouts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No abandoned checkouts yet
+                    No abandoned checkouts found
                   </TableCell>
                 </TableRow>
               ) : (
@@ -240,12 +323,25 @@ const AdminFollowUps = () => {
                     </TableCell>
                     <TableCell className="text-sm">{formatDate(checkout.created_at)}</TableCell>
                     <TableCell>
-                      {!checkout.converted && !checkout.opted_out && (
-                        <Button size="sm" variant="outline" onClick={() => markConverted(checkout.id)}>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Convert
+                      <div className="flex items-center gap-1">
+                        {!checkout.converted && !checkout.opted_out && checkout.status !== "archived" && (
+                          <Button size="sm" variant="outline" onClick={() => markConverted(checkout.id)} title="Mark as converted">
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {checkout.status === "archived" ? (
+                          <Button size="sm" variant="outline" onClick={() => restoreCheckout(checkout.id)} title="Restore">
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => archiveCheckout(checkout.id)} title="Archive">
+                            <Archive className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget(checkout)} title="Delete permanently">
+                          <Trash2 className="h-3 w-3" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -254,6 +350,28 @@ const AdminFollowUps = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Checkout Permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the checkout for <strong>{deleteTarget?.customer_name || deleteTarget?.email}</strong> and all related follow-up actions.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteCheckout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

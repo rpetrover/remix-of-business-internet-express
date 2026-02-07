@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
@@ -9,6 +9,7 @@ import AdminAIConfig from '@/components/admin/AdminAIConfig';
 import AdminVoiceAgent from '@/components/admin/AdminVoiceAgent';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminFollowUps from '@/components/admin/AdminFollowUps';
+import AdminCallLog from '@/components/admin/AdminCallLog';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminSettings from '@/components/admin/AdminSettings';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -100,6 +101,10 @@ const Admin = () => {
               <UserCheck className="h-4 w-4" />
               Follow-ups
             </TabsTrigger>
+            <TabsTrigger value="call-log" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <PhoneCall className="h-4 w-4" />
+              Call Log
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 className="h-4 w-4" />
               Analytics
@@ -117,6 +122,7 @@ const Admin = () => {
           <TabsContent value="ai-agent"><AdminAIConfig /></TabsContent>
           <TabsContent value="voice-agent"><AdminVoiceAgent /></TabsContent>
           <TabsContent value="follow-ups"><AdminFollowUps /></TabsContent>
+          <TabsContent value="call-log"><AdminCallLog /></TabsContent>
           <TabsContent value="analytics"><AdminAnalytics /></TabsContent>
           <TabsContent value="settings"><AdminSettings /></TabsContent>
         </Tabs>

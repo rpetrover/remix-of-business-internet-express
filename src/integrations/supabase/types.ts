@@ -146,6 +146,78 @@ export type Database = {
         }
         Relationships: []
       }
+      call_records: {
+        Row: {
+          call_sid: string | null
+          callee_phone: string | null
+          caller_phone: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          direction: string
+          duration_seconds: number | null
+          id: string
+          recording_url: string | null
+          related_checkout_id: string | null
+          related_order_id: string | null
+          status: string
+          summary: string | null
+          transcript: string | null
+          updated_at: string
+        }
+        Insert: {
+          call_sid?: string | null
+          callee_phone?: string | null
+          caller_phone?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          direction?: string
+          duration_seconds?: number | null
+          id?: string
+          recording_url?: string | null
+          related_checkout_id?: string | null
+          related_order_id?: string | null
+          status?: string
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Update: {
+          call_sid?: string | null
+          callee_phone?: string | null
+          caller_phone?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          direction?: string
+          duration_seconds?: number | null
+          id?: string
+          recording_url?: string | null
+          related_checkout_id?: string | null
+          related_order_id?: string | null
+          status?: string
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_records_related_checkout_id_fkey"
+            columns: ["related_checkout_id"]
+            isOneToOne: false
+            referencedRelation: "abandoned_checkouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_records_related_order_id_fkey"
+            columns: ["related_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_contacts: {
         Row: {
           campaign_id: string
