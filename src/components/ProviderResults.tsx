@@ -17,7 +17,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { type InternetProvider, type InternetPlan } from "@/data/providers";
-import { useCart } from "@/hooks/useCart";
+import { useCart } from "@/contexts/CartContext";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
 import { trackPlanSelected } from "@/lib/analytics";
 

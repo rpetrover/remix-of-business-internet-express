@@ -18,6 +18,7 @@ import Admin from "./pages/Admin";
 import VerifyEmail from "./pages/VerifyEmail";
 import OrderSuccess from "./pages/OrderSuccess";
 import ChatWidget from "./components/ChatWidget";
+import { CartProvider } from "./contexts/CartContext";
 import { captureAttribution } from "./hooks/useAttribution";
 import { trackPageView } from "./lib/analytics";
 
@@ -44,24 +45,26 @@ const App = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <RouteTracker />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/check-availability" element={<CheckAvailabilityPage />} />
-          <Route path="/enterprise" element={<EnterprisePage />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/upsell" element={<Upsell />} />
-          <Route path="/order-completion" element={<OrderCompletion />} />
-          <Route path="/availability/results" element={<AvailabilityResults />} />
-          <Route path="/unsubscribe" element={<Unsubscribe />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <ChatWidget />
+        <CartProvider>
+          <RouteTracker />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/check-availability" element={<CheckAvailabilityPage />} />
+            <Route path="/enterprise" element={<EnterprisePage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/upsell" element={<Upsell />} />
+            <Route path="/order-completion" element={<OrderCompletion />} />
+            <Route path="/availability/results" element={<AvailabilityResults />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <ChatWidget />
+        </CartProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

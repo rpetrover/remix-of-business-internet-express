@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Phone, Star, ChevronDown, ChevronUp, Globe, AlertTriangle, MessageCircle } from "lucide-react";
 import { type InternetProvider, type InternetPlan } from "@/data/providers";
-import { useCart } from "@/hooks/useCart";
+import { useCart } from "@/contexts/CartContext";
 
 interface AlternativeResultsProps {
   address: string;

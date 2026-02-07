@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Phone, Tv, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import type { CartItem } from '@/hooks/useCart';
+import type { CartItem } from '@/contexts/CartContext';
 
 interface UpsellOption {
   id: string;
