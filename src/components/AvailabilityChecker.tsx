@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, Loader2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { checkSpectrumAvailability, getAvailableProviders } from "@/data/providers";
+import { getAllAvailableProviders } from "@/data/providers";
+import { supabase } from "@/integrations/supabase/client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
+import { updateCustomerContext } from "@/hooks/useCustomerContext";
 
 const AvailabilityChecker = () => {
   const [formData, setFormData] = useState({
@@ -63,17 +65,40 @@ const AvailabilityChecker = () => {
     }
 
     setIsChecking(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const isSpectrumAvailable = checkSpectrumAvailability(formData.zipCode);
-    const fullAddress = getFullAddress();
+    try {
+      const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
+        body: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zipCode },
+      });
 
-    if (isSpectrumAvailable) {
-      navigate("/availability/success", { state: { address: fullAddress } });
-    } else {
-      const altProviders = getAvailableProviders(formData.zipCode);
-      navigate("/availability/no-coverage", {
-        state: { address: fullAddress, availableProviders: altProviders },
+      const verifiedZip = geocodeData?.location?.zip || formData.zipCode;
+      const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
+      const fccMapUrl = geocodeData?.fccMapUrl || "";
+      const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
+
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: verifiedZip.substring(0, 5),
+        businessName: formData.businessName,
+      });
+
+      navigate("/availability/results", {
+        state: { address: verifiedAddress, allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable, fccMapUrl },
+      });
+    } catch {
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        businessName: formData.businessName,
+      });
+
+      const result = getAllAvailableProviders(formData.zipCode);
+      navigate("/availability/results", {
+        state: { address: getFullAddress(), allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable },
       });
     }
 
