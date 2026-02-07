@@ -59,15 +59,23 @@ const LeadCaptureModal = ({
 
     setIsSubmitting(true);
     try {
-      // reCAPTCHA verification
-      const recaptchaToken = await executeRecaptcha("lead_capture");
-      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
-        body: { token: recaptchaToken, action: "lead_capture" },
-      });
-      if (captchaError || !captchaResult?.success) {
-        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
-        setIsSubmitting(false);
-        return;
+      // reCAPTCHA verification (non-blocking — don't prevent checkout if it fails)
+      try {
+        const recaptchaPromise = executeRecaptcha("lead_capture").then(async (token) => {
+          const { data, error } = await supabase.functions.invoke("verify-recaptcha", {
+            body: { token, action: "lead_capture" },
+          });
+          if (error || !data?.success) {
+            console.warn("reCAPTCHA verification failed, proceeding anyway:", error || data);
+          }
+        });
+        // 5-second timeout so we don't block the user
+        await Promise.race([
+          recaptchaPromise,
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
+      } catch (recaptchaErr) {
+        console.warn("reCAPTCHA error, proceeding anyway:", recaptchaErr);
       }
 
       // Save lead as abandoned checkout with attribution data
