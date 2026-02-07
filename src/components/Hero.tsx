@@ -9,6 +9,7 @@ import { getAllAvailableProviders } from "@/data/providers";
 import { supabase } from "@/integrations/supabase/client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
+import { updateCustomerContext } from "@/hooks/useCustomerContext";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
@@ -71,6 +72,14 @@ const Hero = () => {
       const fccMapUrl = geocodeData?.fccMapUrl || "";
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
 
+      // Save customer context for pre-filling the order form
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: verifiedZip.substring(0, 5),
+      });
+
       navigate("/availability/results", {
         state: {
           address: verifiedAddress,
@@ -80,6 +89,14 @@ const Hero = () => {
         },
       });
     } catch {
+      // Save customer context even on fallback
+      updateCustomerContext({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+      });
+
       const result = getAllAvailableProviders(formData.zipCode);
       navigate("/availability/results", {
         state: {
