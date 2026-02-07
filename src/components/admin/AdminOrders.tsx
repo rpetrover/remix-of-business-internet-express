@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink, FileText, Archive, Trash2, Filter } from 'lucide-react';
+import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink, FileText, Archive, Trash2, Filter, DollarSign, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +55,9 @@ const AdminOrders = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  const [refundTarget, setRefundTarget] = useState<Order | null>(null);
+  const [isRefunding, setIsRefunding] = useState(false);
+  const [refundReason, setRefundReason] = useState<string>('requested_by_customer');
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -65,7 +68,7 @@ const AdminOrders = () => {
       .order('created_at', { ascending: false });
 
     if (statusFilter === 'active') {
-      query = query.not('status', 'in', '("archived","cancelled")');
+      query = query.not('status', 'in', '("archived","cancelled","refunded")');
     } else if (statusFilter !== 'all') {
       query = query.eq('status', statusFilter);
     }
@@ -135,6 +138,51 @@ const AdminOrders = () => {
     }
   };
 
+  const hasPaymentIntent = (order: Order) => {
+    return order.notes?.includes('Stripe Payment Intent: pi_');
+  };
+
+  const isRefunded = (order: Order) => {
+    return order.status === 'refunded' || order.notes?.includes('REFUNDED:');
+  };
+
+  const handleRefund = async () => {
+    if (!refundTarget) return;
+    setIsRefunding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('refund-order', {
+        body: { order_id: refundTarget.id, reason: refundReason },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'Refund failed');
+      }
+
+      toast({
+        title: 'Refund Processed',
+        description: `$${data.amount.toFixed(2)} refunded for ${data.customer_name}. Refund ID: ${data.refund_id}`,
+      });
+
+      // Refresh orders
+      await fetchOrders();
+      if (selectedOrder?.id === refundTarget.id) {
+        const updated = orders.find(o => o.id === refundTarget.id);
+        if (updated) setSelectedOrder(updated);
+        else setSelectedOrder(null);
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Refund Failed',
+        description: err.message || 'Failed to process refund',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefunding(false);
+      setRefundTarget(null);
+      setRefundReason('requested_by_customer');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
       pending: 'bg-amber-500/10 text-amber-600',
@@ -143,6 +191,7 @@ const AdminOrders = () => {
       confirmed: 'bg-emerald-500/10 text-emerald-600',
       installed: 'bg-green-600/10 text-green-700',
       cancelled: 'bg-destructive/10 text-destructive',
+      refunded: 'bg-orange-500/10 text-orange-600',
       archived: 'bg-muted text-muted-foreground',
     };
     return <Badge className={variants[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
@@ -234,6 +283,7 @@ const AdminOrders = () => {
               <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="installed">Installed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="refunded">Refunded</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
             </SelectContent>
           </Select>
@@ -441,8 +491,25 @@ const AdminOrders = () => {
                 ))}
               </div>
 
-              {/* Archive / Delete Actions */}
-              <div className="flex items-center gap-3 pt-2 border-t border-border">
+              {/* Refund / Archive / Delete Actions */}
+              <div className="flex items-center gap-3 pt-2 border-t border-border flex-wrap">
+                {hasPaymentIntent(selectedOrder) && !isRefunded(selectedOrder) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                    onClick={() => setRefundTarget(selectedOrder)}
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Refund Activation Fee
+                  </Button>
+                )}
+                {isRefunded(selectedOrder) && (
+                  <Badge className="bg-orange-500/10 text-orange-600">
+                    <DollarSign className="h-3 w-3 mr-1" />
+                    Refunded
+                  </Badge>
+                )}
                 {selectedOrder.status !== 'archived' ? (
                   <Button
                     size="sm"
@@ -500,6 +567,56 @@ const AdminOrders = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog open={!!refundTarget} onOpenChange={(open) => { if (!open) { setRefundTarget(null); setRefundReason('requested_by_customer'); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Refund Activation Fee?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  This will refund the <strong>$29.99 activation fee</strong> for <strong>{refundTarget?.customer_name}</strong> ({refundTarget?.contact_email}).
+                  The refund will be processed through Stripe and the order status will be updated to "refunded".
+                </p>
+                <div>
+                  <label className="text-sm font-medium text-foreground block mb-2">Reason for refund:</label>
+                  <Select value={refundReason} onValueChange={setRefundReason}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="requested_by_customer">Requested by customer</SelectItem>
+                      <SelectItem value="duplicate">Duplicate charge</SelectItem>
+                      <SelectItem value="fraudulent">Fraudulent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRefunding}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefund}
+              disabled={isRefunding}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              {isRefunding ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Process Refund
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

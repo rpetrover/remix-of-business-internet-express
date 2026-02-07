@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.leads-api]
 verify_jwt = false
+
+[functions.refund-order]
+verify_jwt = false
