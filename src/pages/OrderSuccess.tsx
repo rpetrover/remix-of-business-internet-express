@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,8 @@ const OrderSuccess = () => {
   const navigate = useNavigate();
   const [orderData, setOrderData] = useState<OrderData | null>(null);
 
+  const { clearCart } = useCart();
+
   useEffect(() => {
     const data = location.state as OrderData | null;
     if (!data) {
@@ -51,6 +54,8 @@ const OrderSuccess = () => {
       return;
     }
     setOrderData(data);
+    // Ensure cart is cleared on success page
+    clearCart();
   }, [location.state, navigate]);
 
   const openChat = () => {
