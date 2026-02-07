@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Wifi, ArrowLeft } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const returnTo = searchParams.get('returnTo') || '/';
@@ -22,10 +24,20 @@ const Auth = () => {
     // Check if user is already logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        window.location.href = returnTo;
+        navigate(returnTo, { replace: true });
+      } else {
+        setCheckingSession(false);
       }
     });
-  }, [returnTo]);
+  }, [returnTo, navigate]);
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +48,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `https://www.businessinternetexpress.com/order-completion`
+          emailRedirectTo: `${window.location.origin}/order-completion`
         }
       });
 
@@ -74,8 +86,8 @@ const Auth = () => {
         description: "You have been successfully signed in"
       });
       
-      // Redirect to intended destination
-      window.location.href = returnTo;
+      // Navigate within SPA — no full page reload
+      navigate(returnTo, { replace: true });
     } catch (error: any) {
       toast({
         title: "Error",
