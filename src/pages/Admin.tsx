@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall, LogOut } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
@@ -16,7 +16,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('orders');
-  const { isAdmin, isLoading, user } = useAdminAuth();
+  const { isAdmin, isLoading, user, signOut } = useAdminAuth();
 
   // Loading state while checking auth
   if (isLoading) {
@@ -45,10 +45,22 @@ const Admin = () => {
           <p className="text-muted-foreground">
             Your account ({user.email}) does not have admin privileges.
           </p>
-          <Link to="/" className="inline-flex items-center gap-2 text-primary hover:underline">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={async () => {
+                await signOut();
+                window.location.href = '/auth?returnTo=/admin';
+              }}
+              className="inline-flex items-center gap-2 text-sm font-medium text-destructive hover:underline"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out &amp; Try Another Account
+            </button>
+            <Link to="/" className="inline-flex items-center gap-2 text-primary hover:underline">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     );
