@@ -100,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
     for (const contact of contacts) {
       try {
         await resend.emails.send({
-          from: "Business Internet Express <noreply@businessinternetexpress.com>",
+          from: "Business Internet Express <service@businessinternetexpress.com>",
           to: [contact.email],
           subject: campaign.subject,
           html: campaign.body_html || `<p>${campaign.subject}</p>`,
