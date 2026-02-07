@@ -11,6 +11,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
+import { trackCheckAvailability } from "@/lib/analytics";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
@@ -84,6 +85,7 @@ const Hero = () => {
       const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
       const fccMapUrl = geocodeData?.fccMapUrl || "";
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
+      trackCheckAvailability(formData.address, verifiedZip);
 
       // Save customer context for pre-filling the order form
       updateCustomerContext({

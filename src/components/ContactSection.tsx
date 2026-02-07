@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
+import { trackContactFormSubmit, setUserData } from "@/lib/analytics";
 
 const ContactSection = () => {
   const { toast } = useToast();
@@ -72,6 +73,8 @@ const ContactSection = () => {
       if (error) throw error;
 
       setIsSubmitted(true);
+      trackContactFormSubmit();
+      setUserData(formData.email, formData.phone);
       toast({
         title: "Quote Request Sent!",
         description: "We'll get back to you within 1 business day.",

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
+import { trackLeadCapture, setUserData } from "@/lib/analytics";
 
 interface LeadCaptureModalProps {
   open: boolean;
@@ -93,6 +94,9 @@ const LeadCaptureModal = ({
         email: formData.email.trim(),
         phone: formData.phone.trim(),
       });
+
+      trackLeadCapture(planName, providerName, price);
+      setUserData(formData.email.trim(), formData.phone.trim());
 
       onContinue({
         email: formData.email.trim(),

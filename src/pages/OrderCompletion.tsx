@@ -18,6 +18,7 @@ import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerCon
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
+import { trackPurchase, trackBeginCheckout, setUserData } from '@/lib/analytics';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -151,6 +152,13 @@ const OrderCompletion = () => {
       navigate('/');
     }
   }, [cartItems, navigate, initialLoadDone]);
+
+  // Track begin_checkout event
+  useEffect(() => {
+    if (cartItems.length > 0 && initialLoadDone) {
+      trackBeginCheckout(getTotalPrice(), cartItems.length);
+    }
+  }, [initialLoadDone, cartItems.length]);
 
   const hasPhoneProduct = cartItems.some(item => 
     item.product_type === 'phone' || 
@@ -302,6 +310,14 @@ const OrderCompletion = () => {
         title: "Order Submitted!",
         description: "We'll be in touch within 1-2 business days to schedule installation.",
       });
+
+      // Track purchase conversion
+      trackPurchase(
+        submitResult?.order_id || 'unknown',
+        totalPrice,
+        cartItems.map(item => ({ name: item.product_name, price: item.price }))
+      );
+      setUserData(formData.email, formData.phone);
       
       // Clear saved customer context after successful order
       clearCustomerContext();
