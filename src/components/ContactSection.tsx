@@ -6,11 +6,13 @@ import { Phone, Mail, MessageSquare, MapPin, Clock, Users, Loader2, CheckCircle 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const ContactSection = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { executeRecaptcha } = useRecaptcha();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -52,6 +54,17 @@ const ContactSection = () => {
     setIsSubmitting(true);
 
     try {
+      // reCAPTCHA verification
+      const recaptchaToken = await executeRecaptcha("contact_form");
+      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+        body: { token: recaptchaToken, action: "contact_form" },
+      });
+      if (captchaError || !captchaResult?.success) {
+        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase.functions.invoke("send-contact-email", {
         body: formData,
       });

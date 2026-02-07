@@ -8,6 +8,7 @@ import { Loader2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 interface LeadCaptureModalProps {
   open: boolean;
@@ -33,6 +34,7 @@ const LeadCaptureModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { executeRecaptcha } = useRecaptcha();
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -55,6 +57,17 @@ const LeadCaptureModal = ({
 
     setIsSubmitting(true);
     try {
+      // reCAPTCHA verification
+      const recaptchaToken = await executeRecaptcha("lead_capture");
+      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+        body: { token: recaptchaToken, action: "lead_capture" },
+      });
+      if (captchaError || !captchaResult?.success) {
+        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Save lead as abandoned checkout
       const { error } = await supabase.from("abandoned_checkouts").insert({
         email: formData.email.trim(),

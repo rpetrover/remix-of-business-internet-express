@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerContext';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -75,6 +76,7 @@ const OrderCompletion = () => {
   const { cartItems, getTotalPrice, addToCart } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { executeRecaptcha } = useRecaptcha();
   const location = useLocation();
   
   const [justVerified, setJustVerified] = useState(false);
@@ -229,6 +231,17 @@ const OrderCompletion = () => {
     setIsSubmitting(true);
     
     try {
+      // reCAPTCHA verification
+      const recaptchaToken = await executeRecaptcha("submit_order");
+      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+        body: { token: recaptchaToken, action: "submit_order" },
+      });
+      if (captchaError || !captchaResult?.success) {
+        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
       const customerName = `${formData.firstName} ${formData.lastName}`;
       const totalPrice = getTotalPrice();
 

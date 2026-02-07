@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.admin-otp]
 verify_jwt = false
+
+[functions.verify-recaptcha]
+verify_jwt = false
+
+[functions.send-contact-email]
+verify_jwt = false
+
+[functions.fcc-broadband-lookup]
+verify_jwt = false
