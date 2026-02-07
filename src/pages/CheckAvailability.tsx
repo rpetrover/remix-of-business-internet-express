@@ -92,8 +92,8 @@ const CheckAvailabilityPage = () => {
       navigate("/availability/results", {
         state: { address: verifiedAddress, allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable, fccMapUrl },
       });
-    } catch {
-      // Save customer context even on fallback
+    } catch (err) {
+      console.error("Availability check error:", err);
       updateCustomerContext({
         address: formData.address,
         city: formData.city,
@@ -107,9 +107,9 @@ const CheckAvailabilityPage = () => {
       navigate("/availability/results", {
         state: { address: getFullAddress(), allProviders: result.allProviders, spectrumAvailable: result.spectrumAvailable },
       });
+    } finally {
+      setIsChecking(false);
     }
-
-    setIsChecking(false);
   };
 
   return (

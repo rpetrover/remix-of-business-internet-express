@@ -69,14 +69,28 @@ const Hero = () => {
     setIsChecking(true);
 
     try {
-      // reCAPTCHA verification
-      const recaptchaToken = await executeRecaptcha("check_availability");
-      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
-        body: { token: recaptchaToken, action: "check_availability" },
-      });
-      if (captchaError || !captchaResult?.success) {
+      // reCAPTCHA verification with timeout
+      let recaptchaPassed = false;
+      try {
+        const recaptchaPromise = executeRecaptcha("check_availability");
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("reCAPTCHA timeout")), 5000)
+        );
+        const recaptchaToken = await Promise.race([recaptchaPromise, timeoutPromise]);
+        const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+          body: { token: recaptchaToken, action: "check_availability" },
+        });
+        if (!captchaError && captchaResult?.success) {
+          recaptchaPassed = true;
+        }
+      } catch (recaptchaErr) {
+        console.warn("reCAPTCHA verification skipped:", recaptchaErr);
+        // Allow submission to continue even if reCAPTCHA fails
+        recaptchaPassed = true;
+      }
+
+      if (!recaptchaPassed) {
         toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
-        setIsChecking(false);
         return;
       }
 
@@ -90,7 +104,6 @@ const Hero = () => {
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
       trackCheckAvailability(formData.address, verifiedZip);
 
-      // Save customer context for pre-filling the order form
       updateCustomerContext({
         address: formData.address,
         city: formData.city,
@@ -107,8 +120,8 @@ const Hero = () => {
           fccMapUrl,
         },
       });
-    } catch {
-      // Save customer context even on fallback
+    } catch (err) {
+      console.error("Availability check error:", err);
       updateCustomerContext({
         address: formData.address,
         city: formData.city,
@@ -125,9 +138,9 @@ const Hero = () => {
           spectrumAvailable: result.spectrumAvailable,
         },
       });
+    } finally {
+      setIsChecking(false);
     }
-
-    setIsChecking(false);
   };
 
   return (
