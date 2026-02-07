@@ -202,23 +202,25 @@ export const useCart = () => {
 
   const addToCart = async (item: Omit<CartItem, 'id'>, options?: { skipNavigation?: boolean }) => {
     try {
-      // Check if we should suggest a bundle
-      const currentTypes = cartItems.map(item => item.product_type);
-      const newTypes = [...currentTypes, item.product_type];
-      
-      const suggestedBundle = BUNDLES.find(bundle => 
-        bundle.components.every(comp => newTypes.includes(comp as any))
-      );
-
-      if (suggestedBundle && !cartItems.some(item => item.is_bundle)) {
-        const useBundle = window.confirm(
-          `Would you like the ${suggestedBundle.name} instead? You'll save $${suggestedBundle.savings}!`
-        );
+      // Skip bundle suggestion when adding from checkout upsells (skipNavigation mode)
+      if (!options?.skipNavigation) {
+        const currentTypes = cartItems.map(item => item.product_type);
+        const newTypes = [...currentTypes, item.product_type];
         
-        if (useBundle) {
-          await clearCart();
-          await addBundleToCart(suggestedBundle);
-          return true;
+        const suggestedBundle = BUNDLES.find(bundle => 
+          bundle.components.every(comp => newTypes.includes(comp as any))
+        );
+
+        if (suggestedBundle && !cartItems.some(item => item.is_bundle)) {
+          const useBundle = window.confirm(
+            `Would you like the ${suggestedBundle.name} instead? You'll save $${suggestedBundle.savings}!`
+          );
+          
+          if (useBundle) {
+            await clearCart();
+            await addBundleToCart(suggestedBundle);
+            return true;
+          }
         }
       }
 
