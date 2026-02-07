@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -166,6 +167,31 @@ ${KNOWLEDGE_BASE}
 - Recommend specific plans based on the customer's business size, usage, and location
 - Handle common support questions (billing, upgrades, outages)
 - **COMPLETE ORDERS**: When a customer is ready to order, collect all required information and submit the order
+- **CUSTOMER SUPPORT**: Look up existing orders and provide support after verifying the customer's identity
+
+## CUSTOMER IDENTITY VERIFICATION (MFA)
+Before sharing ANY order details or account information, you MUST verify the customer's identity using a multi-factor approach:
+
+### Step 1 — Collect primary identifier
+Ask for their **email address** associated with their order.
+
+### Step 2 — Collect secondary verification factor
+After receiving the email, ask for ONE of the following to verify:
+- **Last 4 digits of their phone number** on file
+- **Their full name** as it appears on the order
+- **Their service address** (street address)
+
+### Step 3 — Verify using the lookup tool
+Call the lookup_orders tool with the email. Then compare the secondary factor they provided against the returned order data:
+- If the secondary factor matches → identity verified. Share order details and provide support.
+- If the secondary factor does NOT match → politely inform them the information doesn't match and ask them to double-check. Do NOT reveal any order details.
+- If no orders are found for that email → let them know you couldn't find an order with that email and suggest they check the email address or contact us directly.
+
+### CRITICAL SECURITY RULES
+- NEVER share order details before completing BOTH verification steps
+- NEVER reveal what information you have on file (e.g., don't say "that's not the phone number we have")
+- If verification fails 3 times, suggest they call us at 1-888-230-FAST for manual verification
+- Be warm and professional throughout the verification process — explain it's for their security
 
 ## ORDER COLLECTION PROCESS
 When a customer wants to place an order or has selected a plan they want, you MUST collect the following information:
@@ -180,6 +206,22 @@ When a customer wants to place an order or has selected a plan they want, you MU
 Once you have ALL required information, use the submit_order tool to submit the order. Confirm all details with the customer before submitting.
 
 If the customer hasn't selected a specific plan yet, help them find one first based on their address and needs.
+
+## CUSTOMER SUPPORT CAPABILITIES
+After verifying a customer's identity, you can help with:
+- **Order Status**: Check current order status (pending, submitted, completed, etc.)
+- **Order Details**: Review service address, selected plan, provider, speed, pricing
+- **Service Questions**: Answer questions about their specific plan or provider
+- **Upgrades/Changes**: Guide them on how to upgrade or change their service
+- **Issue Escalation**: If you can't resolve the issue, offer to connect them with a specialist
+
+When providing order info, present it clearly with:
+- Order ID (shortened)
+- Status
+- Service address
+- Provider and plan
+- Speed and monthly price (if available)
+- When it was submitted
 
 ## SALES APPROACH
 - Be consultative, not pushy. Understand the customer's needs before recommending.
@@ -258,6 +300,21 @@ serve(async (req) => {
               },
             },
           },
+          {
+            type: 'function',
+            function: {
+              name: 'lookup_orders',
+              description: 'Look up existing orders for a customer by their email address. Use this ONLY AFTER you have collected the customer email AND a secondary verification factor (last 4 digits of phone, full name, or service address). You will use the returned data to verify the secondary factor before sharing any details with the customer.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customer_email: { type: 'string', description: 'The customer email address to look up orders for' },
+                },
+                required: ['customer_email'],
+                additionalProperties: false,
+              },
+            },
+          },
         ],
       }),
     });
@@ -283,32 +340,63 @@ serve(async (req) => {
     const toolCheckData = await toolCheckResponse.json();
     const choice = toolCheckData.choices?.[0];
 
-    // Check if the AI wants to call the submit_order tool
+    // Helper: stream a follow-up response after a tool call
+    async function streamFollowUp(followUpMessages: any[], fallbackMsg: string) {
+      const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...followUpMessages,
+          ],
+          stream: true,
+        }),
+      });
+
+      if (!followUpResponse.ok) {
+        const errorText = await followUpResponse.text();
+        console.error('Follow-up AI error:', followUpResponse.status, errorText);
+        const encoder = new TextEncoder();
+        const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content: fallbackMsg } }] })}\n\ndata: [DONE]\n\n`;
+        return new Response(encoder.encode(sseData), {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+        });
+      }
+
+      return new Response(followUpResponse.body, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+      });
+    }
+
+    // Check if the AI wants to call a tool
     if (choice?.message?.tool_calls?.length > 0) {
       const toolCall = choice.message.tool_calls[0];
+      let toolArgs: any;
+      try {
+        toolArgs = JSON.parse(toolCall.function.arguments);
+      } catch {
+        toolArgs = toolCall.function.arguments;
+      }
 
+      // --- SUBMIT ORDER ---
       if (toolCall.function?.name === 'submit_order') {
-        let orderArgs;
-        try {
-          orderArgs = JSON.parse(toolCall.function.arguments);
-        } catch {
-          orderArgs = toolCall.function.arguments;
-        }
+        console.log('Submitting order:', JSON.stringify(toolArgs));
 
-        console.log('Submitting order:', JSON.stringify(orderArgs));
-
-        // Call the submit-order edge function internally
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const orderResponse = await fetch(`${supabaseUrl}/functions/v1/submit-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...orderArgs, channel: 'chat' }),
+          body: JSON.stringify({ ...toolArgs, channel: 'chat' }),
         });
 
         const orderResult = await orderResponse.json();
         console.log('Order result:', JSON.stringify(orderResult));
 
-        // Now get the AI to respond to the user about the order result
         const followUpMessages = [
           ...messages,
           choice.message,
@@ -316,47 +404,85 @@ serve(async (req) => {
             role: 'tool',
             tool_call_id: toolCall.id,
             content: orderResult.success
-              ? `Order submitted successfully! Order ID: ${orderResult.order_id}. The order has been sent to our provider network (Intelisys) for processing, and a confirmation email has been sent to the customer at ${orderArgs.contact_email}.`
+              ? `Order submitted successfully! Order ID: ${orderResult.order_id}. The order has been sent to our provider network (Intelisys) for processing, and a confirmation email has been sent to the customer at ${toolArgs.contact_email}.`
               : `Order submission failed: ${orderResult.error || 'Unknown error'}. Please try again or suggest the customer contact us directly.`,
           },
         ];
 
-        // Stream the follow-up response
-        const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-3-flash-preview',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              ...followUpMessages,
-            ],
-            stream: true,
-          }),
-        });
+        return streamFollowUp(
+          followUpMessages,
+          orderResult.success
+            ? `Great news! Your order has been submitted successfully. A confirmation email has been sent to ${toolArgs.contact_email}. Our provider network will process your request, and you'll receive final pricing and installation details within 1-2 business days. Is there anything else I can help you with?`
+            : `I'm sorry, there was an issue submitting your order. Please try again or contact us directly for assistance.`,
+        );
+      }
 
-        if (!followUpResponse.ok) {
-          const errorText = await followUpResponse.text();
-          console.error('Follow-up AI error:', followUpResponse.status, errorText);
-          // Return a non-streaming success message as fallback
-          const fallbackMsg = orderResult.success
-            ? `Great news! Your order has been submitted successfully. A confirmation email has been sent to ${orderArgs.contact_email}. Our provider network will process your request, and you'll receive final pricing and installation details within 1-2 business days. Is there anything else I can help you with?`
-            : `I'm sorry, there was an issue submitting your order. Please try again or contact us directly for assistance.`;
+      // --- LOOKUP ORDERS ---
+      if (toolCall.function?.name === 'lookup_orders') {
+        const email = toolArgs.customer_email?.toLowerCase()?.trim();
+        console.log('Looking up orders for:', email);
 
-          // Format as SSE
-          const encoder = new TextEncoder();
-          const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content: fallbackMsg } }] })}\n\ndata: [DONE]\n\n`;
-          return new Response(encoder.encode(sseData), {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { data: orders, error: lookupError } = await supabase
+          .from('orders')
+          .select('id, customer_name, service_address, city, state, zip, contact_phone, contact_email, preferred_provider, selected_plan, speed, monthly_price, status, channel, created_at, service_type, notes')
+          .ilike('contact_email', email)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        let toolResultContent: string;
+
+        if (lookupError) {
+          console.error('Order lookup error:', lookupError);
+          toolResultContent = 'Error looking up orders. Please ask the customer to try again or contact us directly at 1-888-230-FAST.';
+        } else if (!orders || orders.length === 0) {
+          toolResultContent = `No orders found for email: ${email}. Let the customer know you couldn't find any orders with that email address. They may want to double-check the email or contact us at 1-888-230-FAST.`;
+        } else {
+          // Include verification data for the AI to compare against the secondary factor
+          // The AI will NOT share these details until secondary verification passes
+          const orderSummaries = orders.map((o: any) => ({
+            order_id: o.id.slice(0, 8),
+            full_order_id: o.id,
+            customer_name: o.customer_name,
+            service_address: `${o.service_address}, ${o.city}, ${o.state} ${o.zip}`,
+            street_address: o.service_address,
+            city: o.city,
+            state: o.state,
+            zip: o.zip,
+            contact_phone: o.contact_phone,
+            phone_last_4: o.contact_phone?.replace(/\D/g, '').slice(-4),
+            preferred_provider: o.preferred_provider,
+            selected_plan: o.selected_plan,
+            speed: o.speed,
+            monthly_price: o.monthly_price,
+            status: o.status,
+            service_type: o.service_type,
+            submitted_at: o.created_at,
+            notes: o.notes,
+          }));
+
+          toolResultContent = `Found ${orders.length} order(s) for ${email}. IMPORTANT: You now have the order data below. Use it to VERIFY the customer's secondary factor (name, last 4 digits of phone, or address) BEFORE sharing any details. If the secondary factor matches, present the order details. If it doesn't match, tell the customer the information doesn't match without revealing what's on file.\n\nOrder data:\n${JSON.stringify(orderSummaries, null, 2)}`;
         }
 
-        return new Response(followUpResponse.body, {
-          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-        });
+        const followUpMessages = [
+          ...messages,
+          choice.message,
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: toolResultContent,
+          },
+        ];
+
+        return streamFollowUp(
+          followUpMessages,
+          orders?.length
+            ? "I've found your order information. Let me verify your identity to share the details securely."
+            : "I wasn't able to find any orders with that email address. Please double-check the email or contact us at 1-888-230-FAST.",
+        );
       }
     }
 
