@@ -23,6 +23,7 @@ import IndustryAutocomplete from '@/components/IndustryAutocomplete';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
 import { trackPurchase, trackBeginCheckout, setUserData } from '@/lib/analytics';
+import { getAttributionForDb } from '@/hooks/useAttribution';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -307,6 +308,7 @@ const OrderCompletion = () => {
         .join('; ');
 
       // Build the full order data to pass through Stripe metadata
+      const attribution = getAttributionForDb();
       const orderPayload = {
         customer_name: customerName,
         service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
@@ -337,6 +339,8 @@ const OrderCompletion = () => {
         })),
         business_name: formData.businessName,
         porting_bill_url: portingBillUrl,
+        // Attribution data
+        ...attribution,
       };
 
       // Track analytics before redirect

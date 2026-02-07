@@ -24,7 +24,10 @@ export type Database = {
           customer_name: string | null
           email: string
           follow_up_count: number
+          gbraid: string | null
+          gclid: string | null
           id: string
+          landing_page: string | null
           last_follow_up_at: string | null
           monthly_price: number | null
           opted_out: boolean
@@ -37,6 +40,13 @@ export type Database = {
           state: string | null
           status: string
           updated_at: string
+          utm_adgroup: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          wbraid: string | null
           zip: string | null
         }
         Insert: {
@@ -48,7 +58,10 @@ export type Database = {
           customer_name?: string | null
           email: string
           follow_up_count?: number
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_follow_up_at?: string | null
           monthly_price?: number | null
           opted_out?: boolean
@@ -61,6 +74,13 @@ export type Database = {
           state?: string | null
           status?: string
           updated_at?: string
+          utm_adgroup?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
           zip?: string | null
         }
         Update: {
@@ -72,7 +92,10 @@ export type Database = {
           customer_name?: string | null
           email?: string
           follow_up_count?: number
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
+          landing_page?: string | null
           last_follow_up_at?: string | null
           monthly_price?: number | null
           opted_out?: boolean
@@ -85,6 +108,13 @@ export type Database = {
           state?: string | null
           status?: string
           updated_at?: string
+          utm_adgroup?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
           zip?: string | null
         }
         Relationships: []
@@ -452,6 +482,36 @@ export type Database = {
           },
         ]
       }
+      lead_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          lead_id: string
+          lead_type: string
+          new_status: string
+          old_status: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          lead_id: string
+          lead_type?: string
+          new_status: string
+          old_status?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          lead_id?: string
+          lead_type?: string
+          new_status?: string
+          old_status?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           channel: string
@@ -461,9 +521,12 @@ export type Database = {
           country: string
           created_at: string
           customer_name: string
+          gbraid: string | null
+          gclid: string | null
           id: string
           intelisys_email_sent: boolean
           intelisys_sent_at: string | null
+          landing_page: string | null
           monthly_price: number | null
           notes: string | null
           porting_bill_url: string | null
@@ -476,6 +539,13 @@ export type Database = {
           state: string
           status: string
           updated_at: string
+          utm_adgroup: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          wbraid: string | null
           zip: string
         }
         Insert: {
@@ -486,9 +556,12 @@ export type Database = {
           country?: string
           created_at?: string
           customer_name: string
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
           intelisys_email_sent?: boolean
           intelisys_sent_at?: string | null
+          landing_page?: string | null
           monthly_price?: number | null
           notes?: string | null
           porting_bill_url?: string | null
@@ -501,6 +574,13 @@ export type Database = {
           state: string
           status?: string
           updated_at?: string
+          utm_adgroup?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
           zip: string
         }
         Update: {
@@ -511,9 +591,12 @@ export type Database = {
           country?: string
           created_at?: string
           customer_name?: string
+          gbraid?: string | null
+          gclid?: string | null
           id?: string
           intelisys_email_sent?: boolean
           intelisys_sent_at?: string | null
+          landing_page?: string | null
           monthly_price?: number | null
           notes?: string | null
           porting_bill_url?: string | null
@@ -526,6 +609,13 @@ export type Database = {
           state?: string
           status?: string
           updated_at?: string
+          utm_adgroup?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          wbraid?: string | null
           zip?: string
         }
         Relationships: []

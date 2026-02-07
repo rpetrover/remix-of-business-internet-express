@@ -1,3 +1,5 @@
+import { getAttribution, type AttributionData } from './useAttribution';
+
 const STORAGE_KEY = 'customer-context';
 
 export interface CustomerContext {
@@ -32,4 +34,14 @@ export const updateCustomerContext = (partial: Partial<CustomerContext>) => {
 
 export const clearCustomerContext = () => {
   localStorage.removeItem(STORAGE_KEY);
+};
+
+/**
+ * Get customer context merged with attribution data,
+ * ready for database insertion on lead/order records.
+ */
+export const getCustomerContextWithAttribution = (): CustomerContext & AttributionData => {
+  const context = getCustomerContext();
+  const attribution = getAttribution();
+  return { ...context, ...attribution };
 };

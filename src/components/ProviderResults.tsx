@@ -19,6 +19,7 @@ import {
 import { type InternetProvider, type InternetPlan } from "@/data/providers";
 import { useCart } from "@/hooks/useCart";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
+import { trackPlanSelected } from "@/lib/analytics";
 
 interface ProviderResultsProps {
   address: string;
@@ -218,6 +219,8 @@ const ProviderResults = ({ address, allProviders, spectrumAvailable, fccMapUrl }
   const [pendingPlan, setPendingPlan] = useState<{ plan: InternetPlan; provider: InternetProvider } | null>(null);
 
   const handleSelectPlan = (plan: InternetPlan, provider: InternetProvider) => {
+    // Fire plan_selected event
+    trackPlanSelected(plan.name, provider.name, parsePrice(plan.price));
     // Show lead capture modal first
     setPendingPlan({ plan, provider });
     setLeadModalOpen(true);
