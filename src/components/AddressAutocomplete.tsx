@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
@@ -29,6 +29,21 @@ const AddressAutocomplete = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const { getCurrentLocation, isAvailable } = useGooglePlaces(inputRef, onPlaceSelect);
 
+  // Keep the DOM input value in sync with the React state value.
+  // This is critical because Google Places Autocomplete manipulates the DOM
+  // directly, and we use defaultValue to avoid fighting with it during typing.
+  // When the parent state changes (e.g. from handlePlaceSelect filling in
+  // fields after a Business Name selection), we need to push that into the DOM.
+  useEffect(() => {
+    if (inputRef.current && isAvailable) {
+      // Only sync if the DOM value differs from the React state value
+      // to avoid overwriting while the user is actively typing
+      if (inputRef.current !== document.activeElement && inputRef.current.value !== value) {
+        inputRef.current.value = value;
+      }
+    }
+  }, [value, isAvailable]);
+
   // If Google Maps API key is not configured, fall back to a regular input
   if (!isAvailable) {
     return (
@@ -52,8 +67,10 @@ const AddressAutocomplete = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={className}
-        required={required}
         autoComplete="off"
+        // Don't use HTML required — we validate in JS (handleSubmit)
+        // to avoid silent form blocking when Google Places fills fields
+        // programmatically without updating the DOM input.
       />
 
       {/* Current Location button */}
