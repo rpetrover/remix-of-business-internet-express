@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight } from 'lucide-react';
+import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -73,6 +73,22 @@ const AdminOrders = () => {
     }
   };
 
+  const updateIntelisysStatus = async (orderId: string) => {
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('orders')
+      .update({ intelisys_email_sent: true, intelisys_sent_at: now } as any)
+      .eq('id', orderId);
+
+    if (!error) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, intelisys_email_sent: true, intelisys_sent_at: now } : o));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, intelisys_email_sent: true, intelisys_sent_at: now } : null);
+      }
+      toast({ title: 'Marked as Submitted', description: 'Order flagged as submitted to Intelisys.' });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
       pending: 'bg-amber-500/10 text-amber-600',
@@ -88,6 +104,59 @@ const AdminOrders = () => {
   const getChannelBadge = (channel: string) => {
     const icons: Record<string, string> = { chat: '💬', email: '📧', phone: '📞', web: '🌐' };
     return <Badge variant="outline" className="text-xs">{icons[channel] || '📋'} {channel}</Badge>;
+  };
+
+  const handleSubmitToIntelisys = (order: Order) => {
+    const lines: string[] = [];
+    lines.push("Dear Team,");
+    lines.push("");
+    lines.push("I hope you are doing well.");
+    lines.push("");
+    lines.push("We are requesting available options and pricing to start internet service at the location listed below. No order has been placed yet. This request is for evaluation and to proceed with the most cost-effective option.");
+    lines.push("");
+    lines.push(`Customer Name: ${order.customer_name}`);
+    lines.push("Service Address:");
+    lines.push(order.service_address);
+    lines.push(`${order.city}, ${order.state} ${order.zip}`);
+    lines.push(order.country);
+    lines.push("");
+    lines.push(`Contact Phone: ${order.contact_phone}`);
+    lines.push(`Email: ${order.contact_email}`);
+    lines.push("");
+    lines.push("Service Requested:");
+    lines.push(`• ${order.service_type || "Business internet service only"}`);
+    if (order.preferred_provider) lines.push(`• Preferred provider: ${order.preferred_provider}`);
+    if (order.selected_plan) lines.push(`• Selected plan: ${order.selected_plan}`);
+    if (order.speed) lines.push(`• Speed: ${order.speed}`);
+    if (order.monthly_price) lines.push(`• Estimated monthly price: $${order.monthly_price}/month`);
+    lines.push("• Most cost-effective available option");
+    lines.push("");
+    lines.push("Requested Information:");
+    if (order.preferred_provider) {
+      lines.push(`• ${order.preferred_provider} business internet availability`);
+    } else {
+      lines.push("• Business internet availability");
+    }
+    lines.push("• Pricing and bandwidth options");
+    lines.push("• Installation details and timeline");
+    lines.push("• Any one-time or recurring charges");
+    lines.push("");
+    lines.push("Please let us know if you need any additional information to move forward.");
+    if (order.notes) {
+      lines.push("");
+      lines.push(`Additional Notes: ${order.notes}`);
+    }
+    lines.push("");
+    lines.push("");
+    lines.push("Best,");
+    lines.push("Business Internet Express");
+    lines.push("Sales Team");
+    lines.push("www.businessinternetexpress.com");
+
+    const body = lines.join("\n");
+    const subject = `[Business Internet Express] Internet Service Request – ${order.customer_name}`;
+    const mailto = `mailto:intelisys_orders@scansource.com?cc=service@businessinternetexpress.com&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, '_blank');
   };
 
   return (
@@ -238,24 +307,29 @@ const AdminOrders = () => {
                 )}
               </div>
 
-              {/* Intelisys Status */}
+              {/* Intelisys Submission */}
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Globe className="h-4 w-4" /> Intelisys Submission
                 </h4>
-                <div className="text-sm">
+                <div className="flex items-center gap-3">
                   {selectedOrder.intelisys_email_sent ? (
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-emerald-500/10 text-emerald-600">✓ Sent</Badge>
-                      {selectedOrder.intelisys_sent_at && (
-                        <span className="text-muted-foreground">
-                          at {new Date(selectedOrder.intelisys_sent_at).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
+                    <Badge className="bg-emerald-500/10 text-emerald-600">✓ Submitted</Badge>
                   ) : (
-                    <Badge className="bg-amber-500/10 text-amber-600">Pending</Badge>
+                    <Badge className="bg-amber-500/10 text-amber-600">Not Submitted</Badge>
                   )}
+                  <Button
+                    size="sm"
+                    variant={selectedOrder.intelisys_email_sent ? 'outline' : 'default'}
+                    onClick={() => {
+                      handleSubmitToIntelisys(selectedOrder);
+                      // Mark as sent in DB
+                      updateIntelisysStatus(selectedOrder.id);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    {selectedOrder.intelisys_email_sent ? 'Re-send to Intelisys' : 'Submit to Intelisys'}
+                  </Button>
                 </div>
               </div>
 
