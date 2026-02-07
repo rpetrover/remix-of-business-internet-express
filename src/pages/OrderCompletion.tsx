@@ -268,19 +268,24 @@ const OrderCompletion = () => {
     setIsSubmitting(true);
     
     try {
-      // reCAPTCHA verification (non-blocking — don't prevent checkout if it fails)
+      // reCAPTCHA verification (non-blocking — fire and forget, never block checkout)
       try {
-        const recaptchaPromise = executeRecaptcha("submit_order").then(async (token) => {
-          const { data, error } = await supabase.functions.invoke("verify-recaptcha", {
-            body: { token, action: "submit_order" },
+        const recaptchaPromise = executeRecaptcha("submit_order")
+          .then(async (token) => {
+            try {
+              await supabase.functions.invoke("verify-recaptcha", {
+                body: { token, action: "submit_order" },
+              });
+            } catch (verifyErr) {
+              console.warn("reCAPTCHA verify call failed, ignoring:", verifyErr);
+            }
+          })
+          .catch((err: unknown) => {
+            console.warn("reCAPTCHA execute failed, ignoring:", err);
           });
-          if (error || !data?.success) {
-            console.warn("reCAPTCHA verification failed, proceeding anyway:", error || data);
-          }
-        });
         await Promise.race([
           recaptchaPromise,
-          new Promise((resolve) => setTimeout(resolve, 5000)),
+          new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);
       } catch (recaptchaErr) {
         console.warn("reCAPTCHA error, proceeding anyway:", recaptchaErr);
@@ -355,30 +360,59 @@ const OrderCompletion = () => {
       setUserData(formData.email, formData.phone);
 
       // Create Stripe Checkout session
-      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke("create-checkout-session", {
-        body: {
-          customer_name: customerName,
-          contact_email: formData.email,
-          contact_phone: formData.phone,
-          service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip: formData.zipCode,
-          order_data: orderPayload,
-        },
-      });
+      console.log("Creating checkout session...");
+      let checkoutData: any = null;
+      let checkoutError: any = null;
+      
+      try {
+        const result = await supabase.functions.invoke("create-checkout-session", {
+          body: {
+            customer_name: customerName,
+            contact_email: formData.email,
+            contact_phone: formData.phone,
+            service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zipCode,
+            order_data: orderPayload,
+          },
+        });
+        checkoutData = result.data;
+        checkoutError = result.error;
+        console.log("Checkout session result:", { data: checkoutData, error: checkoutError });
+      } catch (invokeErr: any) {
+        console.error("functions.invoke threw:", invokeErr);
+        throw new Error(`Payment service unavailable: ${invokeErr?.message || "Network error"}`);
+      }
 
-      if (checkoutError || !checkoutData?.url) {
-        throw new Error(checkoutData?.error || checkoutError?.message || "Failed to create payment session");
+      if (checkoutError) {
+        console.error("Checkout session error:", checkoutError);
+        throw new Error(typeof checkoutError === 'object' ? (checkoutError.message || JSON.stringify(checkoutError)) : String(checkoutError));
+      }
+
+      // Handle case where data might be a string instead of parsed JSON
+      let parsedData = checkoutData;
+      if (typeof checkoutData === 'string') {
+        try {
+          parsedData = JSON.parse(checkoutData);
+        } catch {
+          console.error("Failed to parse checkout response as JSON:", checkoutData);
+          throw new Error("Invalid response from payment service");
+        }
+      }
+
+      if (!parsedData?.url) {
+        console.error("No URL in checkout response:", parsedData);
+        throw new Error(parsedData?.error || "Payment session created but no redirect URL received");
       }
 
       // Redirect to Stripe Checkout
-      window.location.href = checkoutData.url;
-    } catch (error) {
+      window.location.href = parsedData.url;
+    } catch (error: any) {
       console.error("Checkout error:", error);
       toast({
-        title: "Error",
-        description: "Failed to initiate payment. Please try again.",
+        title: "Payment Error",
+        description: error?.message || "Failed to initiate payment. Please try again.",
         variant: "destructive"
       });
       setIsSubmitting(false);
