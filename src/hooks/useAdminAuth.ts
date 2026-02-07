@@ -7,33 +7,68 @@ export const useAdminAuth = () => {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+    let isMounted = true;
 
-      if (!user) {
+    const checkAdmin = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (!isMounted) return;
+
+        if (userError || !user) {
+          setUser(null);
+          setIsAdmin(false);
+          setIsLoading(false);
+          return;
+        }
+
+        setUser(user);
+
+        // Check if user has admin role using the has_role function
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error('Error checking admin role:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data === true);
+        }
+      } catch (err) {
+        console.error('Admin auth check failed:', err);
+        if (isMounted) {
+          setIsAdmin(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener BEFORE initial check
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      // Reset loading only if we have a meaningful state change
+      setUser(session?.user ?? null);
+      if (!session?.user) {
         setIsAdmin(false);
         setIsLoading(false);
-        return;
+      } else {
+        checkAdmin();
       }
-
-      // Check if user has admin role using the has_role function
-      const { data, error } = await supabase.rpc('has_role', {
-        _user_id: user.id,
-        _role: 'admin'
-      });
-
-      setIsAdmin(data === true);
-      setIsLoading(false);
-    };
+    });
 
     checkAdmin();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAdmin();
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return { isAdmin, isLoading, user };
