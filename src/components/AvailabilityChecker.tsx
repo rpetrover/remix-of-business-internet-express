@@ -12,6 +12,7 @@ import type { PlaceResult } from "@/hooks/useGooglePlaces";
 
 const AvailabilityChecker = () => {
   const [formData, setFormData] = useState({
+    businessName: "",
     address: "",
     city: "",
     state: "",
@@ -26,12 +27,14 @@ const AvailabilityChecker = () => {
   };
 
   const handlePlaceSelect = (place: PlaceResult) => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       address: place.address,
       city: place.city,
       state: place.state,
       zipCode: place.zipCode,
-    });
+      ...(place.businessName ? { businessName: place.businessName } : {}),
+    }));
   };
 
   const getFullAddress = () => {
@@ -100,6 +103,16 @@ const AvailabilityChecker = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="home-businessName">Business Name</Label>
+                  <Input
+                    id="home-businessName"
+                    value={formData.businessName}
+                    onChange={(e) => handleInputChange("businessName", e.target.value)}
+                    placeholder="Your Business Name"
+                  />
+                </div>
+
                 <div>
                   <Label htmlFor="home-address">
                     Street Address <span className="text-destructive">*</span>
