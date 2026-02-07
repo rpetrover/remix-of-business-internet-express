@@ -373,24 +373,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Format the Intelisys order email
-    const emailText = formatOrderEmail(orderData);
-    const emailHtml = formatOrderHtml(orderData);
-    const subject = `[Business Internet Express] Internet Service Request – ${orderData.customer_name}`;
-
-    // Send to Intelisys
+    // Intelisys email is no longer sent automatically.
+    // Admins submit to Intelisys manually from the admin panel using their local email client.
+    // Admins submit to Intelisys manually from the admin panel using their local email client.
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-    const emailResponse = await resend.emails.send({
-      from: "Business Internet Express <orders@businessinternetexpress.com>",
-      to: ["intelisys_orders@scansource.com"],
-      cc: ["service@businessinternetexpress.com"],
-      subject,
-      text: emailText,
-      html: emailHtml,
-    });
-
-    console.log("Order email sent to Intelisys:", emailResponse);
 
     // Store the order in the database
     const { data: orderRecord, error: insertError } = await supabase.from("orders").insert({
@@ -409,9 +395,9 @@ serve(async (req) => {
       monthly_price: orderData.monthly_price || null,
       status: "submitted",
       channel: orderData.channel || "web",
-      intelisys_email_sent: true,
-      intelisys_sent_at: new Date().toISOString(),
-      resend_id: emailResponse.data?.id || null,
+      intelisys_email_sent: false,
+      intelisys_sent_at: null,
+      resend_id: null,
       notes: orderData.notes ? String(orderData.notes).slice(0, 2000) : null,
     }).select().single();
 
@@ -421,19 +407,7 @@ serve(async (req) => {
 
     const orderId = orderRecord?.id || "";
 
-    // Log as outbound email
-    await supabase.from("emails").insert({
-      direction: "outbound",
-      from_email: "orders@businessinternetexpress.com",
-      from_name: "Business Internet Express",
-      to_email: "intelisys_orders@scansource.com",
-      to_name: "Intelisys Orders",
-      subject,
-      body_html: emailHtml,
-      body_text: emailText,
-      status: "sent",
-      resend_id: emailResponse.data?.id || null,
-    });
+    // (Intelisys email log removed — admin submits manually now)
 
     // Send detailed customer confirmation email
     const customerHtml = formatCustomerConfirmationHtml(orderData, orderId);
