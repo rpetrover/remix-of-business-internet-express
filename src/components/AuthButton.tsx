@@ -28,28 +28,26 @@ const AuthButton = () => {
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      // Clear local storage first to ensure clean state
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+    } catch (err) {
+      console.error('Sign out exception:', err);
+    } finally {
+      // Clean up any stale tokens regardless of outcome
       const keysToRemove = Object.keys(localStorage).filter(
         (key) => key.startsWith('sb-') || key.startsWith('supabase')
       );
       keysToRemove.forEach((key) => localStorage.removeItem(key));
 
-      await supabase.auth.signOut();
-
       setUser(null);
+      setIsSigningOut(false);
       toast({
         title: 'Signed Out',
         description: 'You have been successfully signed out',
       });
       navigate('/', { replace: true });
-    } catch (err) {
-      console.error('Sign out exception:', err);
-      // Force clean state even on error
-      localStorage.clear();
-      setUser(null);
-      navigate('/', { replace: true });
-    } finally {
-      setIsSigningOut(false);
     }
   };
 
