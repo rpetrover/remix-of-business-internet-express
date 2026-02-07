@@ -73,6 +73,42 @@ async function verifyWebhookSignature(
   }
 }
 
+// Domains/addresses we should never auto-reply to (loop prevention)
+const OWN_DOMAIN = "businessinternetexpress.com";
+const NO_REPLY_ADDRESSES = [
+  "noreply@",
+  "no-reply@",
+  "mailer-daemon@",
+  "postmaster@",
+  "bounce@",
+  "notifications@",
+];
+
+function shouldSkipAutoReply(fromEmail: string, subject: string): { skip: boolean; reason: string } {
+  const lowerFrom = fromEmail.toLowerCase().trim();
+  const lowerSubject = subject.toLowerCase();
+
+  // 1. Never reply to our own domain
+  if (lowerFrom.endsWith(`@${OWN_DOMAIN}`)) {
+    return { skip: true, reason: `Sender is from own domain: ${lowerFrom}` };
+  }
+
+  // 2. Never reply to noreply/system addresses
+  for (const addr of NO_REPLY_ADDRESSES) {
+    if (lowerFrom.startsWith(addr) || lowerFrom.includes(addr)) {
+      return { skip: true, reason: `Sender is a no-reply address: ${lowerFrom}` };
+    }
+  }
+
+  // 3. Detect reply loops via excessive "Re:" prefixes (more than 3 deep)
+  const reCount = (subject.match(/\bRe:/gi) || []).length;
+  if (reCount > 3) {
+    return { skip: true, reason: `Reply loop detected: ${reCount} Re: prefixes` };
+  }
+
+  return { skip: false, reason: "" };
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -119,6 +155,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // --- LOOP PREVENTION: check before storing ---
+    const loopCheck = shouldSkipAutoReply(fromEmail, emailSubject);
+    if (loopCheck.skip) {
+      console.log(`Skipping email entirely (loop prevention): ${loopCheck.reason}`);
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: loopCheck.reason }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Store the inbound email
     const { data: emailData, error: insertError } = await supabase.from("emails").insert({
       direction: "inbound",
@@ -134,6 +180,24 @@ const handler = async (req: Request): Promise<Response> => {
     if (insertError) {
       console.error("Error storing inbound email:", insertError);
       throw insertError;
+    }
+
+    // Rate limit: don't auto-reply if we already replied to this sender in the last 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: recentReplies } = await supabase
+      .from("emails")
+      .select("id")
+      .eq("direction", "outbound")
+      .eq("to_email", fromEmail)
+      .gte("created_at", fiveMinutesAgo)
+      .limit(1);
+
+    if (recentReplies && recentReplies.length > 0) {
+      console.log(`Rate limited: already replied to ${fromEmail} in the last 5 minutes`);
+      return new Response(JSON.stringify({ success: true, stored: true, auto_reply_skipped: "rate_limited" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     // Check AI config for auto-reply
