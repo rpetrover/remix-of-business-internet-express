@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Phone, Wifi, Tv, Smartphone, Star, MessageCircle } from "lucide-react";
 import { spectrumPlans, type InternetPlan } from "@/data/providers";
-import { useCart } from "@/hooks/useCart";
+import { useCart } from "@/contexts/CartContext";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
 
 interface SpectrumResultsProps {
