@@ -372,6 +372,86 @@ export type Database = {
           },
         ]
       }
+      intelisys_threads: {
+        Row: {
+          admin_email: string | null
+          created_at: string
+          customer_email: string | null
+          id: string
+          intelisys_email_id: string | null
+          intelisys_from_email: string | null
+          intelisys_reply_draft: string | null
+          order_id: string | null
+          outbound_email_id: string | null
+          reply_email_id: string | null
+          request_summary: string | null
+          request_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_email?: string | null
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          intelisys_email_id?: string | null
+          intelisys_from_email?: string | null
+          intelisys_reply_draft?: string | null
+          order_id?: string | null
+          outbound_email_id?: string | null
+          reply_email_id?: string | null
+          request_summary?: string | null
+          request_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string | null
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          intelisys_email_id?: string | null
+          intelisys_from_email?: string | null
+          intelisys_reply_draft?: string | null
+          order_id?: string | null
+          outbound_email_id?: string | null
+          reply_email_id?: string | null
+          request_summary?: string | null
+          request_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelisys_threads_intelisys_email_id_fkey"
+            columns: ["intelisys_email_id"]
+            isOneToOne: false
+            referencedRelation: "emails"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelisys_threads_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelisys_threads_outbound_email_id_fkey"
+            columns: ["outbound_email_id"]
+            isOneToOne: false
+            referencedRelation: "emails"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelisys_threads_reply_email_id_fkey"
+            columns: ["reply_email_id"]
+            isOneToOne: false
+            referencedRelation: "emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           channel: string
