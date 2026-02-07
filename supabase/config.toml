@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.ga4-analytics]
 verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false

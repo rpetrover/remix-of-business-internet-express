@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
@@ -10,6 +10,7 @@ import AdminVoiceAgent from '@/components/admin/AdminVoiceAgent';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminFollowUps from '@/components/admin/AdminFollowUps';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminSettings from '@/components/admin/AdminSettings';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const Admin = () => {
@@ -103,6 +104,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders"><AdminOrders /></TabsContent>
@@ -113,6 +118,7 @@ const Admin = () => {
           <TabsContent value="voice-agent"><AdminVoiceAgent /></TabsContent>
           <TabsContent value="follow-ups"><AdminFollowUps /></TabsContent>
           <TabsContent value="analytics"><AdminAnalytics /></TabsContent>
+          <TabsContent value="settings"><AdminSettings /></TabsContent>
         </Tabs>
       </div>
     </div>
