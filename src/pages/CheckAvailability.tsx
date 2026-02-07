@@ -154,11 +154,12 @@ const CheckAvailabilityPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <Label htmlFor="businessName">Business Name</Label>
-                    <Input
+                    <AddressAutocomplete
                       id="businessName"
                       value={formData.businessName}
-                      onChange={(e) => handleInputChange("businessName", e.target.value)}
-                      placeholder="Your Business Name"
+                      onChange={(value) => handleInputChange("businessName", value)}
+                      onPlaceSelect={handlePlaceSelect}
+                      placeholder="Search by business name..."
                     />
                   </div>
 
