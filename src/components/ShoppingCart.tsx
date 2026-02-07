@@ -1,30 +1,35 @@
 import { useState } from 'react';
-import { ShoppingCart as ShoppingCartIcon, X, Trash2 } from 'lucide-react';
+import { ShoppingCart as ShoppingCartIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router-dom';
 
 const ShoppingCart = () => {
-  const { cartItems, removeFromCart, getTotalPrice, getCartCount, user, isGuestUser } = useCart();
+  const { cartItems, removeFromCart, getTotalPrice, getCartCount, isGuestUser } = useCart();
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleCheckout = () => {
+    setIsOpen(false);
     if (isGuestUser) {
-      // For guest users, suggest creating account or proceed as guest
       const createAccount = window.confirm(
         'Create an account to save your order and get updates, or continue as guest?'
       );
       if (createAccount) {
-        window.location.href = '/auth';
+        navigate('/auth?returnTo=/order-completion');
         return;
       }
     }
-    
-    // Navigate to order completion page
-    window.location.href = '/order-completion';
+    navigate('/order-completion');
+  };
+
+  const handleSignIn = () => {
+    setIsOpen(false);
+    navigate('/auth?returnTo=/order-completion');
   };
 
   return (
@@ -122,7 +127,7 @@ const ShoppingCart = () => {
                   {isGuestUser && (
                     <Button 
                       variant="outline"
-                      onClick={() => window.location.href = '/auth'}
+                      onClick={handleSignIn}
                       className="w-full"
                     >
                       Sign In to Save Cart
