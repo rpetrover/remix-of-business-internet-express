@@ -75,7 +75,7 @@ function generateEmailHtml(
           </div>
           <p style="font-size: 16px; color: #333;">Many of our providers offer <strong>same-day or next-day installation</strong>. Complete your order now and get connected fast!</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spectrum-biz-express.lovable.app" style="background: #003087; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order →</a>
+            <a href="https://www.businessinternetexpress.com/check-availability" style="background: #003087; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order →</a>
           </div>
           <p style="font-size: 14px; color: #666;">Or call us at <strong>1-888-230-FAST</strong> — our AI agents are available 24/7!</p>
         </div>
@@ -105,7 +105,7 @@ function generateEmailHtml(
             <li>✅ 24/7 AI-powered support</li>
           </ul>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spectrum-biz-express.lovable.app" style="background: #003087; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order →</a>
+            <a href="https://www.businessinternetexpress.com/check-availability" style="background: #003087; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order →</a>
           </div>
         </div>
         <div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
@@ -129,7 +129,7 @@ function generateEmailHtml(
           </div>
           <p style="font-size: 16px; color: #333;">Every day without reliable internet is a day your business falls behind. <strong>Let's get you connected today.</strong></p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spectrum-biz-express.lovable.app" style="background: #e65100; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Order Now — Install Tomorrow →</a>
+            <a href="https://www.businessinternetexpress.com/check-availability" style="background: #e65100; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Order Now — Install Tomorrow →</a>
           </div>
         </div>
         <div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
@@ -156,7 +156,7 @@ function generateEmailHtml(
             <p style="margin: 5px 0; font-size: 16px; color: #1b5e20;">Your saved plan: <strong>${provider} — ${plan}</strong> at <strong>${price}/mo</strong></p>
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spectrum-biz-express.lovable.app" style="background: #1b5e20; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Get Connected Now →</a>
+            <a href="https://www.businessinternetexpress.com/check-availability" style="background: #1b5e20; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Get Connected Now →</a>
           </div>
         </div>
         <div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
@@ -179,7 +179,7 @@ function generateEmailHtml(
           </div>
           <p style="font-size: 16px; color: #333;"><strong>Remember:</strong> Our service is completely free. Providers pay us, so you get the same price (or better) as going direct. There's literally no downside.</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spectrum-biz-express.lovable.app" style="background: #b71c1c; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order — Final Reminder →</a>
+            <a href="https://www.businessinternetexpress.com/check-availability" style="background: #b71c1c; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Complete Your Order — Final Reminder →</a>
           </div>
           <p style="font-size: 14px; color: #666; text-align: center;">Or call <strong>1-888-230-FAST</strong> anytime — we're available 24/7!</p>
         </div>
@@ -208,7 +208,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
-    const siteUrl = "https://spectrum-biz-express.lovable.app";
+    const siteUrl = "https://www.businessinternetexpress.com";
 
     // Get all active abandoned checkouts that haven't opted out or converted
     const { data: checkouts, error: fetchError } = await supabase
