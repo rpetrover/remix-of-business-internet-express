@@ -57,8 +57,10 @@ export const useCart = () => {
     supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
       setUser(currentUser);
       if (currentUser) {
-        // Migrate guest cart to database and load user cart
-        migrateGuestCartForUser(currentUser);
+        // Migrate guest cart if any, then always load from DB
+        migrateGuestCartForUser(currentUser).then(() => {
+          loadCartItemsForUser(currentUser);
+        });
       }
     });
 
@@ -68,8 +70,9 @@ export const useCart = () => {
       setUser(sessionUser);
       
       if (sessionUser && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        // User just logged in or verified — migrate guest cart using session user directly
+        // User just logged in or verified — migrate guest cart then load DB cart
         await migrateGuestCartForUser(sessionUser);
+        await loadCartItemsForUser(sessionUser);
       } else if (!sessionUser) {
         // User logged out - load guest cart
         loadGuestCart();
@@ -96,8 +99,9 @@ export const useCart = () => {
     localStorage.setItem('guest-cart', JSON.stringify(items));
   };
 
-  const loadCartItems = async () => {
-    if (!user) {
+  const loadCartItemsForUser = async (authUser?: any) => {
+    const targetUser = authUser || user;
+    if (!targetUser) {
       loadGuestCart();
       return;
     }
@@ -126,6 +130,8 @@ export const useCart = () => {
     }
   };
 
+  const loadCartItems = async () => loadCartItemsForUser();
+
   const migrateGuestCartForUser = async (authUser: any) => {
     const guestCart = localStorage.getItem('guest-cart');
     if (!guestCart || !authUser) return;
@@ -150,25 +156,8 @@ export const useCart = () => {
           });
       }
 
-      // Clear guest cart and load from database
+      // Clear guest cart
       localStorage.removeItem('guest-cart');
-      
-      // Load cart items directly using the authenticated user
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('cart_items')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        setCartItems((data || []).map(item => ({
-          ...item,
-          product_type: item.product_type as 'internet' | 'phone' | 'tv' | 'bundle'
-        })));
-      } finally {
-        setIsLoading(false);
-      }
 
       toast({
         title: "Cart Synced",
