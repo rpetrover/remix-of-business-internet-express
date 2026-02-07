@@ -24,22 +24,76 @@ export function trackPageView(path: string, title?: string) {
   });
 }
 
-// ─── Core Business Events ───
-export function trackCheckAvailability(address: string, zipCode: string) {
-  gtag("event", "check_availability", {
+// ─── Core Funnel Events (Google Ads Optimized) ───
+
+/** Fires when an address availability search completes. */
+export function trackAddressLookup(state?: string, city?: string, zip?: string) {
+  gtag("event", "address_lookup", {
     event_category: "engagement",
-    event_label: zipCode,
-    address_zip: zipCode,
+    state: state || "",
+    city: city || "",
+    zip: zip || "",
   });
 }
 
-export function trackLeadCapture(planName: string, providerName: string, price: number) {
+/** Fires when pricing plans / providers are displayed on the results page. */
+export function trackPlanView(providerCount: number, address?: string) {
+  gtag("event", "plan_view", {
+    event_category: "engagement",
+    provider_count: providerCount,
+    address: address || "",
+  });
+}
+
+/** Fires when a user selects a specific provider/plan. */
+export function trackPlanSelected(planName: string, providerName: string, price: number) {
+  gtag("event", "plan_selected", {
+    event_category: "engagement",
+    plan_name: planName,
+    provider_name: providerName,
+    value: price,
+    currency: "USD",
+  });
+}
+
+/**
+ * Fires when a lead is successfully submitted (PRIMARY conversion).
+ * This replaces the old generate_lead event with a standardized name.
+ */
+export function trackLeadSubmit(planName: string, providerName: string, price: number) {
+  // Fire as lead_submit (primary conversion for Google Ads)
+  gtag("event", "lead_submit", {
+    event_category: "conversion",
+    event_label: `${providerName} - ${planName}`,
+    plan_name: planName,
+    provider_name: providerName,
+    value: price,
+    currency: "USD",
+  });
+
+  // Also fire GA4's standard generate_lead for backward compatibility
   gtag("event", "generate_lead", {
     event_category: "conversion",
     event_label: `${providerName} - ${planName}`,
     value: price,
     currency: "USD",
   });
+
+  // Google Ads conversion — uncomment and replace with your Ads Conversion ID/Label
+  // gtag("event", "conversion", {
+  //   send_to: "AW-XXXXXXXXXX/LEAD_CONVERSION_LABEL",
+  //   value: price,
+  //   currency: "USD",
+  // });
+}
+
+// ─── Legacy aliases (keep for backward compatibility) ───
+export function trackCheckAvailability(address: string, zipCode: string) {
+  trackAddressLookup(undefined, undefined, zipCode);
+}
+
+export function trackLeadCapture(planName: string, providerName: string, price: number) {
+  trackLeadSubmit(planName, providerName, price);
 }
 
 export function trackContactFormSubmit() {
@@ -89,7 +143,7 @@ export function trackPurchase(orderId: string, totalPrice: number, items: { name
 
   // Google Ads conversion tracking — uncomment when Ads conversion ID is ready
   // gtag("event", "conversion", {
-  //   send_to: "AW-XXXXXXXXXX/CONVERSION_LABEL",
+  //   send_to: "AW-XXXXXXXXXX/PURCHASE_CONVERSION_LABEL",
   //   value: totalPrice,
   //   currency: "USD",
   //   transaction_id: orderId,

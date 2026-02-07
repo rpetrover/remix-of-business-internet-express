@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import type { PlaceResult } from "@/hooks/useGooglePlaces";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
+import { trackAddressLookup } from "@/lib/analytics";
 
 const AvailabilityChecker = () => {
   const [formData, setFormData] = useState({
@@ -75,6 +76,8 @@ const AvailabilityChecker = () => {
       const verifiedAddress = geocodeData?.location?.matchedAddress || getFullAddress();
       const fccMapUrl = geocodeData?.fccMapUrl || "";
       const result = getAllAvailableProviders(verifiedZip.substring(0, 5));
+
+      trackAddressLookup(formData.state, formData.city, verifiedZip);
 
       updateCustomerContext({
         address: formData.address,

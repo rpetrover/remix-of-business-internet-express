@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProviderResults from "@/components/ProviderResults";
 import { type InternetProvider } from "@/data/providers";
+import { trackPlanView } from "@/lib/analytics";
 
 const AvailabilityResults = () => {
   const location = useLocation();
@@ -18,8 +19,10 @@ const AvailabilityResults = () => {
       navigate("/check-availability", { replace: true });
     } else {
       window.scrollTo(0, 0);
+      // Fire plan_view event when providers are displayed
+      trackPlanView(allProviders.length, address);
     }
-  }, [address, navigate]);
+  }, [address, navigate, allProviders.length]);
 
   if (!address) return null;
 

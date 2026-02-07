@@ -62,7 +62,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Store the order in the database
+    // Store the order in the database (including attribution data)
     const { data: orderRecord, error: insertError } = await supabase.from("orders").insert({
       customer_name: String(orderData.customer_name).slice(0, 200),
       service_address: String(orderData.service_address).slice(0, 500),
@@ -88,6 +88,17 @@ serve(async (req) => {
         `Stripe Payment Intent: ${session.payment_intent}`,
       ].filter(Boolean).join(" | "),
       porting_bill_url: orderData.porting_bill_url ? String(orderData.porting_bill_url).slice(0, 500) : null,
+      // Attribution data
+      gclid: orderData.gclid || null,
+      gbraid: orderData.gbraid || null,
+      wbraid: orderData.wbraid || null,
+      utm_source: orderData.utm_source || null,
+      utm_medium: orderData.utm_medium || null,
+      utm_campaign: orderData.utm_campaign || null,
+      utm_adgroup: orderData.utm_adgroup || null,
+      utm_term: orderData.utm_term || null,
+      utm_content: orderData.utm_content || null,
+      landing_page: orderData.landing_page || null,
     }).select().single();
 
     if (insertError) {

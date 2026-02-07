@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CheckAvailabilityPage from "./pages/CheckAvailability";
@@ -17,15 +18,33 @@ import Admin from "./pages/Admin";
 import VerifyEmail from "./pages/VerifyEmail";
 import OrderSuccess from "./pages/OrderSuccess";
 import ChatWidget from "./components/ChatWidget";
+import { captureAttribution } from "./hooks/useAttribution";
+import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+/** Track SPA route changes in GA4 */
+const RouteTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname + location.search, document.title);
+  }, [location.pathname, location.search]);
+  return null;
+};
+
+const App = () => {
+  // Capture gclid / UTM params on initial load
+  useEffect(() => {
+    captureAttribution();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/check-availability" element={<CheckAvailabilityPage />} />
@@ -46,6 +65,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

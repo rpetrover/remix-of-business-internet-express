@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerContext } from "@/hooks/useCustomerContext";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
-import { trackLeadCapture, setUserData } from "@/lib/analytics";
+import { trackLeadSubmit, setUserData } from "@/lib/analytics";
+import { getAttributionForDb } from "@/hooks/useAttribution";
 
 interface LeadCaptureModalProps {
   open: boolean;
@@ -69,7 +70,8 @@ const LeadCaptureModal = ({
         return;
       }
 
-      // Save lead as abandoned checkout
+      // Save lead as abandoned checkout with attribution data
+      const attribution = getAttributionForDb();
       const { error } = await supabase.from("abandoned_checkouts").insert({
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -79,7 +81,8 @@ const LeadCaptureModal = ({
         monthly_price: price,
         speed: speed || null,
         status: "abandoned",
-      });
+        ...attribution,
+      } as any);
 
       if (error) {
         console.error("Error saving lead:", error);
@@ -95,7 +98,7 @@ const LeadCaptureModal = ({
         phone: formData.phone.trim(),
       });
 
-      trackLeadCapture(planName, providerName, price);
+      trackLeadSubmit(planName, providerName, price);
       setUserData(formData.email.trim(), formData.phone.trim());
 
       onContinue({

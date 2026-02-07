@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.verify-payment]
 verify_jwt = false
+
+[functions.leads-api]
+verify_jwt = false
