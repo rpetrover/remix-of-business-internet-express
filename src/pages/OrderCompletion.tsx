@@ -10,13 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerContext';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import CheckoutUpsells from '@/components/CheckoutUpsells';
+import IndustryAutocomplete from '@/components/IndustryAutocomplete';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
 import { trackPurchase, trackBeginCheckout, setUserData } from '@/lib/analytics';
@@ -34,6 +37,11 @@ const orderSchema = z.object({
   phoneNumberType: z.enum(['transfer', 'new']).optional(),
   existingNumber: z.string().optional(),
   preferredAreaCode: z.string().optional(),
+  industry: z.string().max(100, "Industry must be less than 100 characters").optional(),
+  hasLiquorLicense: z.boolean().optional(),
+  licensedOccupancy: z.string().max(10, "Occupancy must be less than 10 characters").optional(),
+  businessTaxId: z.string().max(20, "Tax ID must be less than 20 characters").optional(),
+  additionalNotes: z.string().max(500, "Notes must be less than 500 characters").optional(),
 });
 
 const AREA_CODES = [
@@ -126,6 +134,11 @@ const OrderCompletion = () => {
     existingNumber: '',
     preferredAreaCode: '212',
     smsConsent: false,
+    industry: '',
+    hasLiquorLicense: false,
+    licensedOccupancy: '',
+    businessTaxId: '',
+    additionalNotes: '',
   });
 
   // Also pre-fill email from verified auth user if available
@@ -275,7 +288,13 @@ const OrderCompletion = () => {
           speed: cartItems[0]?.speed || null,
           monthly_price: totalPrice,
           channel: "web",
-          notes: formData.businessName ? `Business: ${formData.businessName}` : null,
+          notes: [
+            formData.businessName ? `Business: ${formData.businessName}` : '',
+            formData.industry ? `Industry: ${formData.industry}` : '',
+            formData.businessTaxId ? `Tax ID: ${formData.businessTaxId}` : '',
+            formData.hasLiquorLicense ? `Liquor License: Yes${formData.licensedOccupancy ? `, Occupancy: ${formData.licensedOccupancy}` : ''}` : '',
+            formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : '',
+          ].filter(Boolean).join(' | ') || null,
           cart_items: cartItems.map(item => ({
             product_name: item.product_name,
             price: item.price,
@@ -531,7 +550,84 @@ const OrderCompletion = () => {
                   </div>
                 </div>
 
-                {/* Phone Number Options (only if phone product is in cart) */}
+                {/* Business Details */}
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                  <h3 className="font-semibold">Business Details</h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="industry">Industry</Label>
+                      <IndustryAutocomplete
+                        id="industry"
+                        value={formData.industry}
+                        onChange={(value) => handleInputChange('industry', value)}
+                        className={errors.industry ? 'border-destructive' : ''}
+                      />
+                      {errors.industry && <p className="text-sm text-destructive mt-1">{errors.industry}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="businessTaxId">Business Tax ID (EIN)</Label>
+                      <Input
+                        id="businessTaxId"
+                        value={formData.businessTaxId}
+                        onChange={(e) => handleInputChange('businessTaxId', e.target.value.replace(/[^0-9-]/g, '').slice(0, 20))}
+                        placeholder="XX-XXXXXXX"
+                        className={errors.businessTaxId ? 'border-destructive' : ''}
+                      />
+                      {errors.businessTaxId && <p className="text-sm text-destructive mt-1">{errors.businessTaxId}</p>}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        id="hasLiquorLicense"
+                        checked={formData.hasLiquorLicense}
+                        onCheckedChange={(checked) =>
+                          setFormData((prev) => ({ ...prev, hasLiquorLicense: checked === true }))
+                        }
+                      />
+                      <Label htmlFor="hasLiquorLicense" className="cursor-pointer">
+                        This business has a liquor license
+                      </Label>
+                    </div>
+
+                    {formData.hasLiquorLicense && (
+                      <div className="ml-7">
+                        <Label htmlFor="licensedOccupancy">Licensed Occupancy</Label>
+                        <Input
+                          id="licensedOccupancy"
+                          value={formData.licensedOccupancy}
+                          onChange={(e) => handleInputChange('licensedOccupancy', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          placeholder="e.g. 150"
+                          className={cn("max-w-[200px]", errors.licensedOccupancy ? 'border-destructive' : '')}
+                        />
+                        {errors.licensedOccupancy && <p className="text-sm text-destructive mt-1">{errors.licensedOccupancy}</p>}
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Maximum number of persons allowed by your liquor license
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="additionalNotes">Additional Information or Notes</Label>
+                    <Textarea
+                      id="additionalNotes"
+                      value={formData.additionalNotes}
+                      onChange={(e) => handleInputChange('additionalNotes', e.target.value.slice(0, 500))}
+                      placeholder="Any special requirements, installation preferences, or other details..."
+                      rows={3}
+                      className={errors.additionalNotes ? 'border-destructive' : ''}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.additionalNotes.length}/500 characters
+                    </p>
+                    {errors.additionalNotes && <p className="text-sm text-destructive mt-1">{errors.additionalNotes}</p>}
+                  </div>
+                </div>
+
+
                 {hasPhoneProduct && (
                   <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                     <h3 className="font-semibold">Phone Number Setup</h3>
