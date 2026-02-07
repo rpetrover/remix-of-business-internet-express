@@ -15,6 +15,7 @@ import { trackCheckAvailability } from "@/lib/analytics";
 
 const Hero = () => {
   const [formData, setFormData] = useState({
+    businessName: "",
     address: "",
     city: "",
     state: "",
@@ -30,12 +31,14 @@ const Hero = () => {
   };
 
   const handlePlaceSelect = (place: PlaceResult) => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       address: place.address,
       city: place.city,
       state: place.state,
       zipCode: place.zipCode,
-    });
+      ...(place.businessName ? { businessName: place.businessName } : {}),
+    }));
   };
 
   const getFullAddress = () => {
@@ -93,6 +96,7 @@ const Hero = () => {
         city: formData.city,
         state: formData.state,
         zipCode: verifiedZip.substring(0, 5),
+        businessName: formData.businessName,
       });
 
       navigate("/availability/results", {
@@ -110,6 +114,7 @@ const Hero = () => {
         city: formData.city,
         state: formData.state,
         zipCode: formData.zipCode,
+        businessName: formData.businessName,
       });
 
       const result = getAllAvailableProviders(formData.zipCode);
@@ -180,6 +185,19 @@ const Hero = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="hero-businessName" className="text-primary-foreground/90">
+                  Business Name
+                </Label>
+                <Input
+                  id="hero-businessName"
+                  value={formData.businessName}
+                  onChange={(e) => handleInputChange("businessName", e.target.value)}
+                  placeholder="Your Business Name"
+                  className="bg-white/90 border-white/30"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="hero-address" className="text-primary-foreground/90">
                   Street Address <span className="text-accent">*</span>
