@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package, UserCheck, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package, UserCheck, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
@@ -17,15 +17,18 @@ import AdminVoiceAgent from '@/components/admin/AdminVoiceAgent';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminFollowUps from '@/components/admin/AdminFollowUps';
 
+type LoginStep = 'email' | 'otp';
+
 const Admin = () => {
   const { isAdmin, isLoading, user } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('orders');
   const [email, setEmail] = useState('');
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [loginStep, setLoginStep] = useState<LoginStep>('email');
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
 
@@ -33,20 +36,51 @@ const Admin = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
+          shouldCreateUser: false,
         },
       });
 
       if (error) throw error;
 
-      setMagicLinkSent(true);
+      setLoginStep('otp');
       toast({
-        title: "Magic Link Sent",
-        description: "Check your email for a sign-in link",
+        title: "Code Sent",
+        description: "Check your email for a 6-digit verification code",
       });
     } catch (error: any) {
       toast({
         title: "Error",
+        description: error.message === 'Signups not allowed for otp' 
+          ? 'This email is not registered as an admin account.' 
+          : error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verified",
+        description: "Access granted",
+      });
+      // Auth state change will handle the rest
+    } catch (error: any) {
+      toast({
+        title: "Verification Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -82,29 +116,14 @@ const Admin = () => {
               <Shield className="h-12 w-12 text-primary mx-auto mb-2" />
               <CardTitle>Admin Access</CardTitle>
               <CardDescription>
-                Enter your admin email to receive a secure sign-in link
+                {loginStep === 'email'
+                  ? 'Enter your admin email to receive a verification code'
+                  : `Enter the 6-digit code sent to ${email}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {magicLinkSent ? (
-                <div className="text-center space-y-4 py-4">
-                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-                  <h3 className="text-lg font-semibold">Check Your Email</h3>
-                  <p className="text-muted-foreground">
-                    We sent a sign-in link to <strong>{email}</strong>. Click the link in the email to access the admin dashboard.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setMagicLinkSent(false);
-                      setEmail('');
-                    }}
-                  >
-                    Try a different email
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleMagicLink} className="space-y-4">
+              {loginStep === 'email' ? (
+                <form onSubmit={handleSendOtp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="admin-email">Email Address</Label>
                     <Input
@@ -118,7 +137,40 @@ const Admin = () => {
                   </div>
                   <Button type="submit" className="w-full gap-2" disabled={isSending}>
                     <Mail className="h-4 w-4" />
-                    {isSending ? 'Sending...' : 'Send Sign-In Link'}
+                    {isSending ? 'Sending...' : 'Send Verification Code'}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp-code">Verification Code</Label>
+                    <Input
+                      id="otp-code"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000000"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                      className="text-center text-2xl tracking-[0.5em] font-mono"
+                      autoFocus
+                    />
+                  </div>
+                  <Button type="submit" className="w-full gap-2" disabled={isSending || otpCode.length !== 6}>
+                    <KeyRound className="h-4 w-4" />
+                    {isSending ? 'Verifying...' : 'Verify & Access Dashboard'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => {
+                      setLoginStep('email');
+                      setOtpCode('');
+                    }}
+                  >
+                    Use a different email
                   </Button>
                 </form>
               )}
