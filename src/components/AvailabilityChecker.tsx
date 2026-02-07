@@ -150,7 +150,6 @@ const AvailabilityChecker = () => {
                     onChange={(value) => handleInputChange("address", value)}
                     onPlaceSelect={handlePlaceSelect}
                     placeholder="Start typing your address..."
-                    required
                   />
                 </div>
 
