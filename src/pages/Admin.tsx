@@ -32,7 +32,7 @@ const Admin = () => {
   const verifyAdminAccess = async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
+
       if (!currentUser) {
         setUser(null);
         setPageState('login-email');
@@ -46,19 +46,13 @@ const Admin = () => {
         _role: 'admin'
       });
 
-      if (error) {
-        console.error('Admin role check error:', error);
+      if (error || isAdmin !== true) {
         setPageState('access-denied');
         return false;
       }
 
-      if (isAdmin === true) {
-        setPageState('dashboard');
-        return true;
-      } else {
-        setPageState('access-denied');
-        return false;
-      }
+      setPageState('dashboard');
+      return true;
     } catch (err) {
       console.error('Admin verification failed:', err);
       setPageState('login-email');
@@ -79,14 +73,14 @@ const Admin = () => {
     setIsSending(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-        },
+      const response = await supabase.functions.invoke('admin-otp', {
+        body: { action: 'send', email },
       });
 
-      if (error) throw error;
+      if (response.error) throw new Error(response.error.message);
+
+      const data = response.data;
+      if (data?.error) throw new Error(data.error);
 
       setPageState('login-otp');
       toast({
@@ -96,9 +90,7 @@ const Admin = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message === 'Signups not allowed for otp'
-          ? 'This email is not registered as an admin account.'
-          : error.message,
+        description: error.message || "Failed to send code",
         variant: "destructive",
       });
     } finally {
@@ -112,25 +104,38 @@ const Admin = () => {
     setPageState('loading');
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otpCode,
-        type: 'email',
+      // Step 1: Verify the OTP code via our edge function
+      const response = await supabase.functions.invoke('admin-otp', {
+        body: { action: 'verify', email, code: otpCode },
       });
 
-      if (error) throw error;
+      if (response.error) throw new Error(response.error.message);
 
-      // Session is now established — directly verify admin access
-      // Don't rely on onAuthStateChange, just check right here
+      const data = response.data;
+      if (data?.error) throw new Error(data.error);
+
+      if (!data?.token_hash) {
+        throw new Error("Verification failed — no session token returned");
+      }
+
+      // Step 2: Use the token hash to establish a Supabase session
+      const { error: authError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: 'magiclink',
+      });
+
+      if (authError) throw authError;
+
+      // Step 3: Session is now established — verify admin access
       const verified = await verifyAdminAccess();
-      
+
       if (verified) {
         toast({ title: "Welcome", description: "Admin access granted" });
       }
     } catch (error: any) {
       toast({
         title: "Verification Failed",
-        description: error.message,
+        description: error.message || "Invalid or expired code",
         variant: "destructive",
       });
       setPageState('login-otp');
