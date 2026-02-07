@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 
-const SITE_KEY = "6LdBhGMsAAAAADVmaPExdyG6Tw0bOOoaKmKpEiRD";
+const SITE_KEY = "6Lc1DmQsAAAAAH5spCSZmbvVHop320iJvSbadn4T";
 
 let scriptLoaded = false;
 let scriptLoading = false;
