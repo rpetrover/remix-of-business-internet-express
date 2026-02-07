@@ -69,29 +69,18 @@ const Hero = () => {
     setIsChecking(true);
 
     try {
-      // reCAPTCHA verification with timeout
-      let recaptchaPassed = false;
+      // reCAPTCHA verification (non-blocking — don't prevent availability check on failure)
       try {
         const recaptchaPromise = executeRecaptcha("check_availability");
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("reCAPTCHA timeout")), 5000)
         );
         const recaptchaToken = await Promise.race([recaptchaPromise, timeoutPromise]);
-        const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
+        await supabase.functions.invoke("verify-recaptcha", {
           body: { token: recaptchaToken, action: "check_availability" },
         });
-        if (!captchaError && captchaResult?.success) {
-          recaptchaPassed = true;
-        }
       } catch (recaptchaErr) {
         console.warn("reCAPTCHA verification skipped:", recaptchaErr);
-        // Allow submission to continue even if reCAPTCHA fails
-        recaptchaPassed = true;
-      }
-
-      if (!recaptchaPassed) {
-        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
-        return;
       }
 
       const { data: geocodeData } = await supabase.functions.invoke("fcc-broadband-lookup", {
