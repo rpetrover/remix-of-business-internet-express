@@ -15,6 +15,8 @@ import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerContext';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
+import type { PlaceResult } from '@/hooks/useGooglePlaces';
 
 const orderSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -154,6 +156,18 @@ const OrderCompletion = () => {
   );
 
   
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setFormData(prev => ({
+      ...prev,
+      address: place.address,
+      city: place.city,
+      state: place.state,
+      zipCode: place.zipCode,
+    }));
+    // Clear related errors
+    setErrors(prev => ({ ...prev, address: '', city: '', state: '', zipCode: '' }));
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -399,10 +413,12 @@ const OrderCompletion = () => {
                 {/* Address Information */}
                 <div>
                   <Label htmlFor="address">Business Address *</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="address"
                     value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    onChange={(value) => handleInputChange('address', value)}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="Start typing your address..."
                     className={errors.address ? 'border-destructive' : ''}
                   />
                   {errors.address && <p className="text-sm text-destructive mt-1">{errors.address}</p>}
