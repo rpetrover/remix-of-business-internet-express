@@ -7,6 +7,7 @@ export interface PlaceResult {
   state: string;
   zipCode: string;
   fullAddress: string;
+  businessName?: string;
 }
 
 export function useGooglePlaces(
@@ -31,8 +32,7 @@ export function useGooglePlaces(
         // Use the classic, reliable Autocomplete API
         const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "us" },
-          types: ["address"],
-          fields: ["address_components", "formatted_address"],
+          fields: ["address_components", "formatted_address", "name", "types"],
         });
 
         autocomplete.addListener("place_changed", () => {
@@ -49,12 +49,19 @@ export function useGooglePlaces(
           const route = get("route");
           const address = [streetNumber, route].filter(Boolean).join(" ");
 
+          // Detect if this is a business/establishment (has a name distinct from the address)
+          const isEstablishment = place.types?.some(t =>
+            ["establishment", "point_of_interest", "store", "restaurant", "food"].includes(t)
+          );
+          const businessName = isEstablishment && place.name ? place.name : undefined;
+
           onPlaceSelectRef.current({
             address,
             city: get("locality") || get("sublocality") || get("administrative_area_level_2"),
             state: getShort("administrative_area_level_1"),
             zipCode: get("postal_code"),
             fullAddress: place.formatted_address || "",
+            businessName,
           });
         });
 

@@ -190,9 +190,10 @@ const OrderCompletion = () => {
       city: place.city,
       state: place.state,
       zipCode: place.zipCode,
+      ...(place.businessName ? { businessName: place.businessName } : {}),
     }));
     // Clear related errors
-    setErrors(prev => ({ ...prev, address: '', city: '', state: '', zipCode: '' }));
+    setErrors(prev => ({ ...prev, address: '', city: '', state: '', zipCode: '', ...(place.businessName ? { businessName: '' } : {}) }));
   };
 
   const handleInputChange = (field: string, value: string) => {
