@@ -466,6 +466,7 @@ export type Database = {
           intelisys_sent_at: string | null
           monthly_price: number | null
           notes: string | null
+          porting_bill_url: string | null
           preferred_provider: string | null
           resend_id: string | null
           selected_plan: string | null
@@ -490,6 +491,7 @@ export type Database = {
           intelisys_sent_at?: string | null
           monthly_price?: number | null
           notes?: string | null
+          porting_bill_url?: string | null
           preferred_provider?: string | null
           resend_id?: string | null
           selected_plan?: string | null
@@ -514,6 +516,7 @@ export type Database = {
           intelisys_sent_at?: string | null
           monthly_price?: number | null
           notes?: string | null
+          porting_bill_url?: string | null
           preferred_provider?: string | null
           resend_id?: string | null
           selected_plan?: string | null
