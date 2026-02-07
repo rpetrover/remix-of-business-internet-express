@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package, UserCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Shield, Package, UserCheck, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
@@ -15,6 +20,40 @@ import AdminFollowUps from '@/components/admin/AdminFollowUps';
 const Admin = () => {
   const { isAdmin, isLoading, user } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('orders');
+  const [email, setEmail] = useState('');
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/admin`,
+        },
+      });
+
+      if (error) throw error;
+
+      setMagicLinkSent(true);
+      toast({
+        title: "Magic Link Sent",
+        description: "Check your email for a sign-in link",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -29,14 +68,62 @@ const Admin = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <Shield className="h-16 w-16 text-muted-foreground mx-auto" />
-          <h1 className="text-2xl font-bold text-foreground">Admin Access Required</h1>
-          <p className="text-muted-foreground">Please sign in to access the admin panel.</p>
-          <Link to="/auth?returnTo=/admin">
-            <Button>Sign In</Button>
-          </Link>
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
+          </div>
+
+          <Card>
+            <CardHeader className="text-center">
+              <Shield className="h-12 w-12 text-primary mx-auto mb-2" />
+              <CardTitle>Admin Access</CardTitle>
+              <CardDescription>
+                Enter your admin email to receive a secure sign-in link
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {magicLinkSent ? (
+                <div className="text-center space-y-4 py-4">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                  <h3 className="text-lg font-semibold">Check Your Email</h3>
+                  <p className="text-muted-foreground">
+                    We sent a sign-in link to <strong>{email}</strong>. Click the link in the email to access the admin dashboard.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setMagicLinkSent(false);
+                      setEmail('');
+                    }}
+                  >
+                    Try a different email
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleMagicLink} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Email Address</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="admin@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full gap-2" disabled={isSending}>
+                    <Mail className="h-4 w-4" />
+                    {isSending ? 'Sending...' : 'Send Sign-In Link'}
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
