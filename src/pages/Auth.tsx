@@ -7,22 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Wifi, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  const returnTo = searchParams.get('returnTo') || '/';
 
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        window.location.href = '/';
+        window.location.href = returnTo;
       }
     });
-  }, []);
+  }, [returnTo]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +74,8 @@ const Auth = () => {
         description: "You have been successfully signed in"
       });
       
-      // Redirect to home page
-      window.location.href = '/';
+      // Redirect to intended destination
+      window.location.href = returnTo;
     } catch (error: any) {
       toast({
         title: "Error",
