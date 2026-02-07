@@ -268,15 +268,22 @@ const OrderCompletion = () => {
     setIsSubmitting(true);
     
     try {
-      // reCAPTCHA verification
-      const recaptchaToken = await executeRecaptcha("submit_order");
-      const { data: captchaResult, error: captchaError } = await supabase.functions.invoke("verify-recaptcha", {
-        body: { token: recaptchaToken, action: "submit_order" },
-      });
-      if (captchaError || !captchaResult?.success) {
-        toast({ title: "Verification Failed", description: "Please try again.", variant: "destructive" });
-        setIsSubmitting(false);
-        return;
+      // reCAPTCHA verification (non-blocking — don't prevent checkout if it fails)
+      try {
+        const recaptchaPromise = executeRecaptcha("submit_order").then(async (token) => {
+          const { data, error } = await supabase.functions.invoke("verify-recaptcha", {
+            body: { token, action: "submit_order" },
+          });
+          if (error || !data?.success) {
+            console.warn("reCAPTCHA verification failed, proceeding anyway:", error || data);
+          }
+        });
+        await Promise.race([
+          recaptchaPromise,
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
+      } catch (recaptchaErr) {
+        console.warn("reCAPTCHA error, proceeding anyway:", recaptchaErr);
       }
 
       const customerName = `${formData.firstName} ${formData.lastName}`;
