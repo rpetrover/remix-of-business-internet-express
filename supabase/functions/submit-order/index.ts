@@ -8,6 +8,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface CartItem {
+  product_name: string;
+  price: number;
+  speed?: string;
+  is_bundle?: boolean;
+}
+
 interface OrderData {
   customer_name: string;
   service_address: string;
@@ -24,6 +31,8 @@ interface OrderData {
   monthly_price?: number;
   channel?: string;
   notes?: string;
+  cart_items?: CartItem[];
+  business_name?: string;
 }
 
 function formatOrderEmail(order: OrderData): string {
@@ -99,6 +108,239 @@ function formatOrderHtml(order: OrderData): string {
   return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">${text.replace(/\n/g, "<br/>")}</div>`;
 }
 
+function formatCustomerConfirmationHtml(order: OrderData, orderId: string): string {
+  const confirmationNumber = orderId ? orderId.slice(0, 8).toUpperCase() : `BIE-${Date.now().toString(36).toUpperCase()}`;
+
+  const cartItemsHtml = (order.cart_items || []).map(item => `
+    <tr>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+        <strong>${item.product_name}</strong>
+        ${item.speed ? `<br/><span style="color: #6b7280; font-size: 13px;">${item.speed}</span>` : ""}
+        ${item.is_bundle ? `<br/><span style="background: #dbeafe; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 4px;">Bundle Discount</span>` : ""}
+      </td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;">$${item.price.toFixed(2)}/mo</td>
+    </tr>
+  `).join("");
+
+  const totalPrice = order.monthly_price || (order.cart_items || []).reduce((sum, i) => sum + i.price, 0);
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #0066cc, #004a99); padding: 32px 24px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: #ffffff; margin: 0 0 8px; font-size: 28px;">🎉 Order Confirmed!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 16px;">Thank you for choosing Business Internet Express</p>
+      </div>
+
+      <!-- Confirmation Number -->
+      <div style="background: #eff6ff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+        <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px;">Confirmation Number</p>
+        <p style="color: #0066cc; font-size: 24px; font-weight: bold; font-family: monospace; letter-spacing: 3px; margin: 0;">${confirmationNumber}</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 24px;">
+        <p style="color: #333; font-size: 15px;">Hi ${order.customer_name},</p>
+        <p style="color: #333; font-size: 15px;">Your business internet service order has been successfully submitted. Here's your complete order summary:</p>
+
+        <!-- Order Items -->
+        <h2 style="color: #1a365d; font-size: 18px; margin: 24px 0 12px; border-bottom: 2px solid #0066cc; padding-bottom: 8px;">Order Summary</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+          ${cartItemsHtml || `
+            <tr>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                <strong>${order.selected_plan || order.service_type || "Business Internet Service"}</strong>
+                ${order.speed ? `<br/><span style="color: #6b7280; font-size: 13px;">${order.speed}</span>` : ""}
+              </td>
+              <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;">
+                ${order.monthly_price ? `$${order.monthly_price.toFixed(2)}/mo` : "TBD"}
+              </td>
+            </tr>
+          `}
+          <tr style="background: #f9fafb;">
+            <td style="padding: 14px 16px; font-weight: bold; font-size: 16px;">Monthly Total</td>
+            <td style="padding: 14px 16px; text-align: right; font-weight: bold; font-size: 18px; color: #0066cc;">$${totalPrice.toFixed(2)}/mo</td>
+          </tr>
+        </table>
+
+        <!-- Service Details -->
+        <h2 style="color: #1a365d; font-size: 18px; margin: 24px 0 12px; border-bottom: 2px solid #0066cc; padding-bottom: 8px;">Service Details</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; width: 40%;"><strong>Service Address:</strong></td>
+            <td style="padding: 8px 0; color: #333;">${order.service_address}<br/>${order.city}, ${order.state} ${order.zip}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280;"><strong>Contact Email:</strong></td>
+            <td style="padding: 8px 0; color: #333;">${order.contact_email}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280;"><strong>Contact Phone:</strong></td>
+            <td style="padding: 8px 0; color: #333;">${order.contact_phone}</td>
+          </tr>
+          ${order.business_name ? `
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280;"><strong>Business Name:</strong></td>
+            <td style="padding: 8px 0; color: #333;">${order.business_name}</td>
+          </tr>` : ""}
+        </table>
+
+        <!-- What Happens Next -->
+        <h2 style="color: #1a365d; font-size: 18px; margin: 24px 0 12px; border-bottom: 2px solid #0066cc; padding-bottom: 8px;">What Happens Next</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top; width: 40px;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; text-align: center; line-height: 28px; color: #0066cc; font-weight: bold; font-size: 13px;">1</div>
+            </td>
+            <td style="padding: 10px 0;">
+              <strong style="color: #333;">Order Confirmation</strong><br/>
+              <span style="color: #6b7280; font-size: 13px;">You'll receive this confirmation email within minutes.</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; text-align: center; line-height: 28px; color: #0066cc; font-weight: bold; font-size: 13px;">2</div>
+            </td>
+            <td style="padding: 10px 0;">
+              <strong style="color: #333;">Account Specialist Call</strong><br/>
+              <span style="color: #6b7280; font-size: 13px;">A dedicated specialist will call you within 1-2 business days to confirm details.</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; text-align: center; line-height: 28px; color: #0066cc; font-weight: bold; font-size: 13px;">3</div>
+            </td>
+            <td style="padding: 10px 0;">
+              <strong style="color: #333;">Installation Scheduled</strong><br/>
+              <span style="color: #6b7280; font-size: 13px;">We'll schedule a convenient installation date within 3-5 business days.</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; text-align: center; line-height: 28px; color: #0066cc; font-weight: bold; font-size: 13px;">4</div>
+            </td>
+            <td style="padding: 10px 0;">
+              <strong style="color: #333;">You're Connected!</strong><br/>
+              <span style="color: #6b7280; font-size: 13px;">Your high-speed business internet goes live. 24/7 support available.</span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Trust Signals -->
+        <div style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; text-align: center;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; text-align: center; width: 33%;">
+                <strong style="font-size: 13px; color: #333;">🛡️ 30-Day Guarantee</strong>
+              </td>
+              <td style="padding: 8px; text-align: center; width: 33%;">
+                <strong style="font-size: 13px; color: #333;">⭐ 99.9% Uptime</strong>
+              </td>
+              <td style="padding: 8px; text-align: center; width: 33%;">
+                <strong style="font-size: 13px; color: #333;">📞 24/7 Support</strong>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="color: #333; font-size: 15px; margin-top: 24px;">
+          Need help? Reply to this email, call us at <a href="tel:+18882303278" style="color: #0066cc;">1-888-230-FAST</a>, or chat with us at <a href="https://businessinternetexpress.com" style="color: #0066cc;">businessinternetexpress.com</a>.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 16px 24px; background: #f5f5f5; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px; text-align: center; font-size: 12px; color: #666;">
+        Business Internet Express | businessinternetexpress.com<br/>
+        <span style="font-size: 11px;">This is an automated order confirmation. Please do not reply directly to this email.</span>
+      </div>
+    </div>
+  `;
+}
+
+function formatAdminNotificationHtml(order: OrderData, orderId: string): string {
+  const confirmationNumber = orderId ? orderId.slice(0, 8).toUpperCase() : "N/A";
+  const totalPrice = order.monthly_price || (order.cart_items || []).reduce((sum, i) => sum + i.price, 0);
+
+  const cartItemsHtml = (order.cart_items || []).map(item => `
+    <tr>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${item.product_name}</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${item.speed || "—"}</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${item.price.toFixed(2)}/mo</td>
+    </tr>
+  `).join("");
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #1a365d; color: white; padding: 20px 24px; border-radius: 8px 8px 0 0;">
+        <h1 style="margin: 0; font-size: 20px;">🆕 New Order Received</h1>
+        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Confirmation: ${confirmationNumber} | Channel: ${order.channel || "web"}</p>
+      </div>
+
+      <div style="padding: 24px; border: 1px solid #e0e0e0;">
+        <h2 style="color: #1a365d; font-size: 16px; margin: 0 0 12px;">Customer Information</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 6px 0; color: #6b7280; width: 35%;"><strong>Name:</strong></td>
+            <td style="padding: 6px 0; color: #333;">${order.customer_name}</td>
+          </tr>
+          ${order.business_name ? `
+          <tr>
+            <td style="padding: 6px 0; color: #6b7280;"><strong>Business:</strong></td>
+            <td style="padding: 6px 0; color: #333;">${order.business_name}</td>
+          </tr>` : ""}
+          <tr>
+            <td style="padding: 6px 0; color: #6b7280;"><strong>Email:</strong></td>
+            <td style="padding: 6px 0; color: #333;"><a href="mailto:${order.contact_email}">${order.contact_email}</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #6b7280;"><strong>Phone:</strong></td>
+            <td style="padding: 6px 0; color: #333;">${order.contact_phone}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #6b7280;"><strong>Address:</strong></td>
+            <td style="padding: 6px 0; color: #333;">${order.service_address}<br/>${order.city}, ${order.state} ${order.zip}</td>
+          </tr>
+        </table>
+
+        <h2 style="color: #1a365d; font-size: 16px; margin: 0 0 12px;">Order Items</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 8px 12px; text-align: left; font-size: 13px; color: #475569;">Product</th>
+              <th style="padding: 8px 12px; text-align: left; font-size: 13px; color: #475569;">Speed</th>
+              <th style="padding: 8px 12px; text-align: right; font-size: 13px; color: #475569;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cartItemsHtml || `
+              <tr>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${order.selected_plan || order.service_type || "Internet Service"}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${order.speed || "—"}</td>
+                <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${order.monthly_price ? `$${order.monthly_price.toFixed(2)}/mo` : "TBD"}</td>
+              </tr>
+            `}
+          </tbody>
+          <tfoot>
+            <tr style="background: #f9fafb;">
+              <td colspan="2" style="padding: 10px 12px; font-weight: bold;">Monthly Total</td>
+              <td style="padding: 10px 12px; text-align: right; font-weight: bold; color: #0066cc;">$${totalPrice.toFixed(2)}/mo</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        ${order.notes ? `
+        <h2 style="color: #1a365d; font-size: 16px; margin: 16px 0 8px;">Notes</h2>
+        <p style="color: #333; background: #f9fafb; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 14px;">${order.notes}</p>
+        ` : ""}
+      </div>
+
+      <div style="padding: 12px 24px; background: #f5f5f5; border-radius: 0 0 8px 8px; text-align: center; font-size: 12px; color: #666;">
+        Business Internet Express — Admin Order Notification
+      </div>
+    </div>
+  `;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -131,7 +373,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Format the order email
+    // Format the Intelisys order email
     const emailText = formatOrderEmail(orderData);
     const emailHtml = formatOrderHtml(orderData);
     const subject = `[Business Internet Express] Internet Service Request – ${orderData.customer_name}`;
@@ -166,7 +408,7 @@ serve(async (req) => {
       speed: orderData.speed ? String(orderData.speed).slice(0, 100) : null,
       monthly_price: orderData.monthly_price || null,
       status: "submitted",
-      channel: orderData.channel || "chat",
+      channel: orderData.channel || "web",
       intelisys_email_sent: true,
       intelisys_sent_at: new Date().toISOString(),
       resend_id: emailResponse.data?.id || null,
@@ -177,7 +419,9 @@ serve(async (req) => {
       console.error("Error storing order:", insertError);
     }
 
-    // Also log as outbound email
+    const orderId = orderRecord?.id || "";
+
+    // Log as outbound email
     await supabase.from("emails").insert({
       direction: "outbound",
       from_email: "orders@businessinternetexpress.com",
@@ -191,44 +435,33 @@ serve(async (req) => {
       resend_id: emailResponse.data?.id || null,
     });
 
-    // Send confirmation email to customer
-    await resend.emails.send({
+    // Send detailed customer confirmation email
+    const customerHtml = formatCustomerConfirmationHtml(orderData, orderId);
+    const customerEmailRes = await resend.emails.send({
       from: "Business Internet Express <noreply@businessinternetexpress.com>",
       to: [orderData.contact_email],
-      subject: `Order Confirmation – Business Internet Express`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="padding: 24px;">
-            <h2 style="color: #1a365d;">Thank You for Your Order!</h2>
-            <p>Hi ${orderData.customer_name},</p>
-            <p>We've received your internet service request and have submitted it to our provider network for processing. Here's a summary:</p>
-            <div style="background: #f7fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
-              <p><strong>Service Address:</strong> ${orderData.service_address}, ${orderData.city}, ${orderData.state} ${orderData.zip}</p>
-              ${orderData.preferred_provider ? `<p><strong>Preferred Provider:</strong> ${orderData.preferred_provider}</p>` : ""}
-              ${orderData.selected_plan ? `<p><strong>Selected Plan:</strong> ${orderData.selected_plan}</p>` : ""}
-              ${orderData.speed ? `<p><strong>Speed:</strong> ${orderData.speed}</p>` : ""}
-              ${orderData.monthly_price ? `<p><strong>Estimated Price:</strong> $${orderData.monthly_price}/month</p>` : ""}
-            </div>
-            <p><strong>What happens next?</strong></p>
-            <ul>
-              <li>Our team will verify availability and pricing with the provider</li>
-              <li>You'll receive a confirmation with final pricing within 1-2 business days</li>
-              <li>Once confirmed, installation will be scheduled (often same-day or next-day for broadband)</li>
-            </ul>
-            <p>If you have any questions, reply to this email or chat with us at <a href="https://businessinternetexpress.com">businessinternetexpress.com</a>.</p>
-          </div>
-          <div style="padding: 16px; background: #f5f5f5; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-            Business Internet Express | businessinternetexpress.com
-          </div>
-        </div>
-      `,
+      subject: `Order Confirmed – Business Internet Express`,
+      html: customerHtml,
     });
+
+    console.log("Customer confirmation email sent:", customerEmailRes);
+
+    // Send admin notification email
+    const adminHtml = formatAdminNotificationHtml(orderData, orderId);
+    const adminEmailRes = await resend.emails.send({
+      from: "Business Internet Express <orders@businessinternetexpress.com>",
+      to: ["rich@scotchtowntechnology.com"],
+      subject: `🆕 New Order: ${orderData.customer_name} – $${(orderData.monthly_price || 0).toFixed(2)}/mo`,
+      html: adminHtml,
+    });
+
+    console.log("Admin notification email sent:", adminEmailRes);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        order_id: orderRecord?.id,
-        message: "Order submitted successfully to Intelisys" 
+        order_id: orderId,
+        message: "Order submitted successfully" 
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
