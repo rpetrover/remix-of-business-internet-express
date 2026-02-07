@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail, Upload } from 'lucide-react';
+import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail, Upload, Shield, AlertTriangle, CreditCard } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
@@ -135,6 +135,7 @@ const OrderCompletion = () => {
     existingNumber: '',
     preferredAreaCode: '212',
     smsConsent: false,
+    brokerAgreement: false,
     industry: '',
     hasLiquorLicense: false,
     licensedOccupancy: '',
@@ -253,6 +254,16 @@ const OrderCompletion = () => {
       return;
     }
 
+    if (!formData.brokerAgreement) {
+      setErrors(prev => ({ ...prev, brokerAgreement: 'You must acknowledge the broker disclosure and activation fee to proceed.' }));
+      toast({
+        title: "Agreement Required",
+        description: "Please acknowledge the broker disclosure and activation fee.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -287,7 +298,6 @@ const OrderCompletion = () => {
           return;
         }
 
-        // Get the file path for admin access
         portingBillUrl = filePath;
       }
 
@@ -296,88 +306,70 @@ const OrderCompletion = () => {
         .map(item => `${item.product_name} - $${item.price}/mo${item.speed ? ` (${item.speed})` : ''}`)
         .join('; ');
 
-      // Submit order via edge function (sends customer + admin + Intelisys emails)
-      const { data: submitResult, error: submitError } = await supabase.functions.invoke("submit-order", {
-        body: {
-          customer_name: customerName,
-          service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip: formData.zipCode,
-          contact_phone: formData.phone,
-          contact_email: formData.email,
-          service_type: itemsSummary || "Business internet service only",
-          preferred_provider: cartItems[0]?.product_name?.split('—')[0]?.trim() || null,
-          selected_plan: cartItems[0]?.product_name || null,
-          speed: cartItems[0]?.speed || null,
-          monthly_price: totalPrice,
-          channel: "web",
-          notes: [
-            formData.businessName ? `Business: ${formData.businessName}` : '',
-            formData.industry ? `Industry: ${formData.industry}` : '',
-            formData.businessTaxId ? `Tax ID: ${formData.businessTaxId}` : '',
-            formData.hasLiquorLicense ? `Liquor License: Yes${formData.licensedOccupancy ? `, Occupancy: ${formData.licensedOccupancy}` : ''}` : '',
-            formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : '',
-          ].filter(Boolean).join(' | ') || null,
-          cart_items: cartItems.map(item => ({
-            product_name: item.product_name,
-            price: item.price,
-            speed: item.speed,
-            is_bundle: item.is_bundle,
-          })),
-          business_name: formData.businessName,
-          porting_bill_url: portingBillUrl,
-        },
-      });
-
-      if (submitError) throw submitError;
-
-      // Build order data to pass to success page
-      const orderData = {
-        customerName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
+      // Build the full order data to pass through Stripe metadata
+      const orderPayload = {
+        customer_name: customerName,
+        service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
         city: formData.city,
         state: formData.state,
-        zipCode: formData.zipCode,
-        items: cartItems.map(item => ({
+        zip: formData.zipCode,
+        country: "United States",
+        contact_phone: formData.phone,
+        contact_email: formData.email,
+        service_type: itemsSummary || "Business internet service only",
+        preferred_provider: cartItems[0]?.product_name?.split('—')[0]?.trim() || null,
+        selected_plan: cartItems[0]?.product_name || null,
+        speed: cartItems[0]?.speed || null,
+        monthly_price: totalPrice,
+        channel: "web",
+        notes: [
+          formData.businessName ? `Business: ${formData.businessName}` : '',
+          formData.industry ? `Industry: ${formData.industry}` : '',
+          formData.businessTaxId ? `Tax ID: ${formData.businessTaxId}` : '',
+          formData.hasLiquorLicense ? `Liquor License: Yes${formData.licensedOccupancy ? `, Occupancy: ${formData.licensedOccupancy}` : ''}` : '',
+          formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : '',
+        ].filter(Boolean).join(' | ') || null,
+        cart_items: cartItems.map(item => ({
           product_name: item.product_name,
           price: item.price,
           speed: item.speed,
           is_bundle: item.is_bundle,
         })),
-        totalPrice,
-        orderId: submitResult?.order_id,
+        business_name: formData.businessName,
+        porting_bill_url: portingBillUrl,
       };
-      
-      toast({
-        title: "Order Submitted!",
-        description: "We'll be in touch within 1-2 business days to schedule installation.",
+
+      // Track analytics before redirect
+      trackBeginCheckout(totalPrice, cartItems.length);
+      setUserData(formData.email, formData.phone);
+
+      // Create Stripe Checkout session
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          customer_name: customerName,
+          contact_email: formData.email,
+          contact_phone: formData.phone,
+          service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip: formData.zipCode,
+          order_data: orderPayload,
+        },
       });
 
-      // Track purchase conversion
-      trackPurchase(
-        submitResult?.order_id || 'unknown',
-        totalPrice,
-        cartItems.map(item => ({ name: item.product_name, price: item.price }))
-      );
-      setUserData(formData.email, formData.phone);
-      
-      // Clear saved customer context and cart after successful order
-      clearCustomerContext();
-      orderSubmittedRef.current = true;
-      await clearCart();
-      
-      // Navigate to success page with order details
-      navigate('/order-success', { state: orderData, replace: true });
+      if (checkoutError || !checkoutData?.url) {
+        throw new Error(checkoutData?.error || checkoutError?.message || "Failed to create payment session");
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutData.url;
     } catch (error) {
+      console.error("Checkout error:", error);
       toast({
         title: "Error",
-        description: "Failed to submit order. Please try again.",
+        description: "Failed to initiate payment. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -455,6 +447,26 @@ const OrderCompletion = () => {
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total Monthly:</span>
                 <span>${getTotalPrice().toFixed(2)}</span>
+              </div>
+              <Separator />
+              <div className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold flex items-center gap-1.5">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      Activation Fee
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">One-time • Refundable within 24 hrs</p>
+                  </div>
+                  <p className="font-bold text-primary">$29.99</p>
+                </div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <Shield className="h-3 w-3 inline mr-1" />
+                  Brokerage service fee charged at checkout via secure Stripe payment. 
+                  Your monthly service charges are billed separately by the internet provider.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -768,13 +780,83 @@ const OrderCompletion = () => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
+                {/* Broker Disclosure & Activation Fee Agreement */}
+                <div className="p-4 border-2 border-primary/30 rounded-lg bg-primary/5 space-y-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-sm text-foreground">Internet Circuit Broker Disclosure</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Required under the FTC Rule on Unfair or Deceptive Fees (16 CFR Part 464) and NYS General Business Law § 349
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-foreground/80 space-y-2 pl-1">
+                    <p>
+                      <strong>Business Internet Express</strong> ("BIE") is an <strong>independent internet circuit broker</strong>. 
+                      BIE is not an internet service provider (ISP) and does not directly provide internet connectivity. 
+                      BIE acts as an intermediary to connect your business with third-party internet service providers.
+                    </p>
+                    <p>
+                      <strong>Activation Fee:</strong> A one-time <strong>$29.99 Account Activation Fee</strong> is charged at 
+                      checkout for BIE's brokerage services, including provider research, plan comparison, order coordination, 
+                      and installation scheduling. This fee is <strong>separate from and in addition to</strong> your monthly 
+                      internet service charges, which are billed directly by the internet provider.
+                    </p>
+                    <p>
+                      <strong>Refund Policy:</strong> The $29.99 Activation Fee is <strong>fully refundable within 24 hours</strong> of 
+                      payment. To request a refund, contact us at{' '}
+                      <a href="mailto:service@businessinternetexpress.com" className="text-primary underline">service@businessinternetexpress.com</a>{' '}
+                      or call <a href="tel:+18882303278" className="text-primary underline">1-888-230-FAST (3278)</a>. 
+                      Refunds will be processed to the original payment method within 5-10 business days.
+                    </p>
+                    <p>
+                      <strong>No Obligation:</strong> This activation fee is for BIE's brokerage services only. 
+                      You are not obligated to purchase any internet service through BIE. Your agreement with the ISP 
+                      is a separate contract between you and the provider.
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="brokerAgreement"
+                      checked={formData.brokerAgreement}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, brokerAgreement: checked === true }))
+                      }
+                    />
+                    <label htmlFor="brokerAgreement" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                      <strong>I acknowledge and agree</strong> that Business Internet Express is an independent internet circuit 
+                      broker, and I authorize the one-time <strong>$29.99 Account Activation Fee</strong> for brokerage services. 
+                      I understand this fee is refundable within 24 hours of payment and is separate from my monthly 
+                      internet service charges. <span className="text-destructive">*</span>
+                    </label>
+                  </div>
+                  {errors.brokerAgreement && (
+                    <p className="text-sm text-destructive ml-7">{errors.brokerAgreement}</p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !formData.brokerAgreement}>
+                  {isSubmitting ? (
+                    'Processing...'
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pay $29.99 Activation Fee & Submit Order
+                    </>
+                  )}
                 </Button>
 
-                <p className="text-sm text-muted-foreground text-center">
-                  By submitting this order, you agree to our Terms of Service. 
+                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                  By proceeding, you agree to our Terms of Service and authorize a one-time charge of $29.99 
+                  for brokerage services. You will be redirected to Stripe for secure payment. 
                   A representative will contact you within 1-2 business days to confirm installation details.
+                  <br />
+                  <span className="font-medium">Your monthly service charges will be billed separately by the internet provider.</span>
                 </p>
               </form>
             </CardContent>
