@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail } from 'lucide-react';
+import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail, Upload } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
@@ -151,6 +151,7 @@ const OrderCompletion = () => {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [portingBillFile, setPortingBillFile] = useState<File | null>(null);
   const orderSubmittedRef = useRef(false);
 
   // Give the cart time to load/migrate after auth before redirecting
@@ -268,6 +269,27 @@ const OrderCompletion = () => {
       const customerName = `${formData.firstName} ${formData.lastName}`;
       const totalPrice = getTotalPrice();
 
+      // Upload porting bill if provided
+      let portingBillUrl: string | null = null;
+      if (portingBillFile && formData.phoneNumberType === 'transfer') {
+        const fileExt = portingBillFile.name.split('.').pop();
+        const filePath = `porting-bills/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('order-documents')
+          .upload(filePath, portingBillFile, { upsert: false });
+
+        if (uploadError) {
+          console.error('File upload error:', uploadError);
+          toast({ title: "Upload Error", description: "Failed to upload phone bill. Please try again.", variant: "destructive" });
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Get the file path for admin access
+        portingBillUrl = filePath;
+      }
+
       // Build items summary for notes
       const itemsSummary = cartItems
         .map(item => `${item.product_name} - $${item.price}/mo${item.speed ? ` (${item.speed})` : ''}`)
@@ -303,6 +325,7 @@ const OrderCompletion = () => {
             is_bundle: item.is_bundle,
           })),
           business_name: formData.businessName,
+          porting_bill_url: portingBillUrl,
         },
       });
 
@@ -673,19 +696,46 @@ const OrderCompletion = () => {
                     )}
 
                     {formData.phoneNumberType === 'transfer' && (
-                      <div>
-                        <Label htmlFor="existingNumber">Current Phone Number *</Label>
-                        <Input
-                          id="existingNumber"
-                          value={formData.existingNumber}
-                          onChange={(e) => handleInputChange('existingNumber', e.target.value.replace(/\D/g, ''))}
-                          placeholder="1234567890"
-                          className={errors.existingNumber ? 'border-destructive' : ''}
-                        />
-                        {errors.existingNumber && <p className="text-sm text-destructive mt-1">{errors.existingNumber}</p>}
-                        <p className="text-sm text-muted-foreground mt-1">
-                          We'll help you transfer your existing number at no extra cost
-                        </p>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="existingNumber">Current Phone Number *</Label>
+                          <Input
+                            id="existingNumber"
+                            value={formData.existingNumber}
+                            onChange={(e) => handleInputChange('existingNumber', e.target.value.replace(/\D/g, ''))}
+                            placeholder="1234567890"
+                            className={errors.existingNumber ? 'border-destructive' : ''}
+                          />
+                          {errors.existingNumber && <p className="text-sm text-destructive mt-1">{errors.existingNumber}</p>}
+                          <p className="text-sm text-muted-foreground mt-1">
+                            We'll help you transfer your existing number at no extra cost
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="portingBill">Upload Current Phone Bill (for number porting)</Label>
+                          <div className="mt-1">
+                            <Input
+                              id="portingBill"
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setPortingBillFile(file);
+                              }}
+                              className="cursor-pointer"
+                            />
+                          </div>
+                          {portingBillFile && (
+                            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                              <Check className="h-3 w-3 text-green-600" />
+                              {portingBillFile.name} ({(portingBillFile.size / 1024).toFixed(0)} KB)
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            A copy of your most recent bill is required to port your number. Accepted: PDF, JPG, PNG, DOC (max 10MB)
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

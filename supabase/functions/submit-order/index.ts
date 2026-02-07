@@ -33,6 +33,7 @@ interface OrderData {
   notes?: string;
   cart_items?: CartItem[];
   business_name?: string;
+  porting_bill_url?: string;
 }
 
 function formatOrderEmail(order: OrderData): string {
@@ -332,6 +333,13 @@ function formatAdminNotificationHtml(order: OrderData, orderId: string): string 
         <h2 style="color: #1a365d; font-size: 16px; margin: 16px 0 8px;">Notes</h2>
         <p style="color: #333; background: #f9fafb; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 14px;">${order.notes}</p>
         ` : ""}
+
+        ${order.porting_bill_url ? `
+        <h2 style="color: #1a365d; font-size: 16px; margin: 16px 0 8px;">📎 Porting Bill Attached</h2>
+        <p style="color: #333; background: #fff7ed; padding: 12px; border-radius: 6px; border: 1px solid #fed7aa; font-size: 14px;">
+          A phone bill has been uploaded for number porting. View it in the admin panel under the order details.
+        </p>
+        ` : ""}
       </div>
 
       <div style="padding: 12px 24px; background: #f5f5f5; border-radius: 0 0 8px 8px; text-align: center; font-size: 12px; color: #666;">
@@ -399,6 +407,7 @@ serve(async (req) => {
       intelisys_sent_at: null,
       resend_id: null,
       notes: orderData.notes ? String(orderData.notes).slice(0, 2000) : null,
+      porting_bill_url: orderData.porting_bill_url ? String(orderData.porting_bill_url).slice(0, 500) : null,
     }).select().single();
 
     if (insertError) {

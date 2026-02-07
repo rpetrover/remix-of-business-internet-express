@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink } from 'lucide-react';
+import { Package, RefreshCw, MapPin, Phone, Mail, Globe, ChevronRight, ExternalLink, FileText } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -27,6 +27,7 @@ interface Order {
   intelisys_email_sent: boolean;
   intelisys_sent_at: string | null;
   notes: string | null;
+  porting_bill_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -306,6 +307,33 @@ const AdminOrders = () => {
                   </div>
                 )}
               </div>
+
+              {/* Porting Bill Document */}
+              {selectedOrder.porting_bill_url && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Porting Bill Document
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Customer uploaded a phone bill for number porting.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { data } = await supabase.storage
+                        .from('order-documents')
+                        .createSignedUrl(selectedOrder.porting_bill_url!, 3600);
+                      if (data?.signedUrl) {
+                        window.open(data.signedUrl, '_blank');
+                      }
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    View / Download Bill
+                  </Button>
+                </div>
+              )}
 
               {/* Intelisys Submission */}
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
