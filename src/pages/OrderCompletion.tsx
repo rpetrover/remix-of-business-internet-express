@@ -127,6 +127,7 @@ const OrderCompletion = () => {
     email: savedContext.email || '',
     phone: savedContext.phone || '',
     address: savedContext.address || '',
+    aptUnit: '',
     city: savedContext.city || '',
     state: savedContext.state || '',
     zipCode: savedContext.zipCode || '',
@@ -276,7 +277,7 @@ const OrderCompletion = () => {
       const { data: submitResult, error: submitError } = await supabase.functions.invoke("submit-order", {
         body: {
           customer_name: customerName,
-          service_address: formData.address,
+          service_address: formData.aptUnit ? `${formData.address}, ${formData.aptUnit}` : formData.address,
           city: formData.city,
           state: formData.state,
           zip: formData.zipCode,
@@ -515,7 +516,17 @@ const OrderCompletion = () => {
                   {errors.address && <p className="text-sm text-destructive mt-1">{errors.address}</p>}
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="aptUnit">Apt / Unit #</Label>
+                    <Input
+                      id="aptUnit"
+                      value={formData.aptUnit}
+                      onChange={(e) => handleInputChange('aptUnit', e.target.value)}
+                      placeholder="Suite 200"
+                      maxLength={20}
+                    />
+                  </div>
                   <div>
                     <Label htmlFor="city">City *</Label>
                     <Input
