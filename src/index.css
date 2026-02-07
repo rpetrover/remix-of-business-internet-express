@@ -116,7 +116,13 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     overflow-x: hidden;
     max-width: 100vw;
-  }
+}
+
+/* Move reCAPTCHA badge to left side to avoid overlap with chat widget */
+.grecaptcha-badge {
+  left: 4px !important;
+  right: auto !important;
+}
 }
 
 /* Google Places Autocomplete dropdown styling */
