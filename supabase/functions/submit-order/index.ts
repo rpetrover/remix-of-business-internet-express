@@ -421,7 +421,7 @@ serve(async (req) => {
     // Send detailed customer confirmation email
     const customerHtml = formatCustomerConfirmationHtml(orderData, orderId);
     const customerEmailRes = await resend.emails.send({
-      from: "Business Internet Express <noreply@businessinternetexpress.com>",
+      from: "Business Internet Express <service@businessinternetexpress.com>",
       to: [orderData.contact_email],
       subject: `Order Confirmed – Business Internet Express`,
       html: customerHtml,
@@ -432,7 +432,7 @@ serve(async (req) => {
     // Send admin notification email
     const adminHtml = formatAdminNotificationHtml(orderData, orderId);
     const adminEmailRes = await resend.emails.send({
-      from: "Business Internet Express <orders@businessinternetexpress.com>",
+      from: "Business Internet Express <service@businessinternetexpress.com>",
       to: ["rich@scotchtowntechnology.com"],
       subject: `🆕 New Order: ${orderData.customer_name} – $${(orderData.monthly_price || 0).toFixed(2)}/mo`,
       html: adminHtml,
