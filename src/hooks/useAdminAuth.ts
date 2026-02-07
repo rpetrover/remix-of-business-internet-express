@@ -1,20 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAdminAuth = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const confirmedAdminUserId = useRef<string | null>(null);
 
   const checkAdminRole = useCallback(async (currentUser: any) => {
     if (!currentUser) {
       setUser(null);
       setIsAdmin(false);
+      confirmedAdminUserId.current = null;
       setIsLoading(false);
       return;
     }
 
     setUser(currentUser);
+
+    // If we already confirmed this user is admin, skip the RPC call
+    if (confirmedAdminUserId.current === currentUser.id) {
+      setIsAdmin(true);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.rpc('has_role', {
@@ -24,39 +33,67 @@ export const useAdminAuth = () => {
 
       if (error) {
         console.error('Error checking admin role:', error);
-        setIsAdmin(false);
+        // On token refresh errors, keep existing admin state if we had it
+        if (confirmedAdminUserId.current === currentUser.id) {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
       } else {
-        setIsAdmin(data === true);
+        const adminResult = data === true;
+        setIsAdmin(adminResult);
+        if (adminResult) {
+          confirmedAdminUserId.current = currentUser.id;
+        } else {
+          confirmedAdminUserId.current = null;
+        }
       }
     } catch (err) {
       console.error('Admin auth check failed:', err);
-      setIsAdmin(false);
+      // Preserve existing admin status on transient errors
+      if (confirmedAdminUserId.current !== currentUser.id) {
+        setIsAdmin(false);
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setIsAdmin(false);
+    confirmedAdminUserId.current = null;
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
-    // IMPORTANT: Set up auth state listener FIRST — this catches
-    // magic link tokens from URL hash before getSession runs
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
 
-        console.log('Auth state change:', event, session?.user?.email);
-
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // User just signed in (e.g. magic link) — reset loading and check role
+        if (event === 'SIGNED_IN') {
           setIsLoading(true);
           await checkAdminRole(session?.user ?? null);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // On token refresh, update user but DON'T show loading spinner
+          // if we already confirmed this user as admin
+          const sessionUser = session?.user ?? null;
+          setUser(sessionUser);
+          if (sessionUser && confirmedAdminUserId.current === sessionUser.id) {
+            // Already confirmed admin — no need to re-check or show loading
+            return;
+          }
+          // Different user or not confirmed yet — re-check
+          setIsLoading(true);
+          await checkAdminRole(sessionUser);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setIsAdmin(false);
+          confirmedAdminUserId.current = null;
           setIsLoading(false);
         } else if (event === 'INITIAL_SESSION') {
-          // Initial session load — check the session
           if (session?.user) {
             await checkAdminRole(session.user);
           } else {
@@ -68,13 +105,12 @@ export const useAdminAuth = () => {
       }
     );
 
-    // Fallback timeout — never stay stuck on "Verifying" for more than 5 seconds
+    // Fallback timeout — never stay stuck on "Verifying" for more than 8 seconds
     const timeout = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn('Admin auth check timed out');
+      if (isMounted) {
         setIsLoading(false);
       }
-    }, 5000);
+    }, 8000);
 
     return () => {
       isMounted = false;
@@ -83,5 +119,5 @@ export const useAdminAuth = () => {
     };
   }, [checkAdminRole]);
 
-  return { isAdmin, isLoading, user };
+  return { isAdmin, isLoading, user, signOut };
 };
