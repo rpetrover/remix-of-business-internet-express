@@ -501,6 +501,101 @@ async function sendAndLogReply(
   }
 }
 
+// ─── Handle Bounce/Delivery Events ───
+async function handleBounceEvent(
+  supabase: any,
+  eventType: string,
+  eventData: any
+): Promise<Response> {
+  const toEmail = eventData.to?.[0] || eventData.email || "";
+  const resendId = eventData.email_id || eventData.id || "";
+  const reason = eventData.bounce?.message || eventData.reason || eventData.response || "Unknown reason";
+  const subject = eventData.subject || "";
+
+  console.log(`Bounce/delivery event: ${eventType} for ${toEmail}, reason: ${reason}`);
+
+  // Update the email record status if we have a resend_id
+  if (resendId) {
+    await supabase
+      .from("emails")
+      .update({ status: eventType === "email.bounced" ? "bounced" : "failed" })
+      .eq("resend_id", resendId);
+  }
+
+  // Check if this was an Intelisys email
+  const isIntelisysBounce = toEmail.toLowerCase().includes(INTELISYS_DOMAIN);
+
+  if (isIntelisysBounce) {
+    // Try to find the matching order
+    let orderContext = "";
+    if (resendId) {
+      const { data: bouncedEmail } = await supabase
+        .from("emails")
+        .select("subject, body_text")
+        .eq("resend_id", resendId)
+        .single();
+
+      if (bouncedEmail) {
+        // Try to match order by looking at recent orders
+        const { data: recentOrders } = await supabase
+          .from("orders")
+          .select("id, customer_name, service_address, city, state, zip, contact_email, contact_phone, selected_plan, speed, monthly_price")
+          .eq("intelisys_email_sent", true)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (recentOrders?.length) {
+          orderContext = `<h3 style="margin-top: 16px;">Recent Orders (match manually):</h3><table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr style="background: #f1f5f9;"><th style="padding: 6px 8px; text-align: left;">Customer</th><th style="padding: 6px 8px; text-align: left;">Address</th><th style="padding: 6px 8px; text-align: left;">Plan</th></tr>
+            ${recentOrders.map((o: any) => `<tr><td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${o.customer_name}</td><td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${o.service_address}, ${o.city}, ${o.state} ${o.zip}</td><td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${o.selected_plan || o.speed || "N/A"}</td></tr>`).join("")}
+          </table>`;
+        }
+      }
+    }
+
+    // Alert admin
+    const alertBody = `
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin-bottom: 16px;">
+        <h2 style="color: #dc2626; margin: 0 0 8px;">⚠️ Intelisys Email Bounced</h2>
+        <p style="color: #991b1b; margin: 0;">An order email to Intelisys was rejected and NOT delivered.</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+        <tr><td style="padding: 6px 0; color: #6b7280; width: 30%;"><strong>To:</strong></td><td style="padding: 6px 0;">${toEmail}</td></tr>
+        <tr><td style="padding: 6px 0; color: #6b7280;"><strong>Subject:</strong></td><td style="padding: 6px 0;">${subject}</td></tr>
+        <tr><td style="padding: 6px 0; color: #6b7280;"><strong>Event:</strong></td><td style="padding: 6px 0;">${eventType}</td></tr>
+        <tr><td style="padding: 6px 0; color: #6b7280;"><strong>Reason:</strong></td><td style="padding: 6px 0; color: #dc2626;">${reason}</td></tr>
+      </table>
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+        <h3 style="color: #92400e; margin: 0 0 8px;">🔧 Action Required</h3>
+        <ol style="color: #78350f; margin: 0; padding-left: 20px;">
+          <li>Find the order in the admin panel under <strong>Orders</strong> tab</li>
+          <li>Manually forward the order details to <strong>intelisys_orders@scansource.com</strong> from your email client</li>
+          <li>Contact Intelisys/ScanSource to whitelist <strong>businessinternetexpress.com</strong> in Mimecast</li>
+          <li>Update DNS: set DMARC to <code>p=quarantine</code> with strict alignment</li>
+        </ol>
+      </div>
+      ${orderContext}
+    `;
+
+    await sendEmail(
+      supabase,
+      ADMIN_EMAIL,
+      "Admin",
+      `🚨 BOUNCE ALERT: Intelisys order email failed — ${subject || "Action Required"}`,
+      alertBody,
+      "outbound",
+      true
+    );
+
+    console.log("Admin notified of Intelisys bounce");
+  }
+
+  return new Response(JSON.stringify({ success: true, handler: "bounce", event: eventType }), {
+    status: 200,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+}
+
 // ─── Main Handler ───
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -526,12 +621,37 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const payload = JSON.parse(rawBody);
-    console.log("Inbound email received:", JSON.stringify(payload));
+    console.log("Webhook event received:", JSON.stringify(payload).slice(0, 500));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // ═══ Handle Resend delivery/bounce events ═══
+    const eventType = payload.type || "";
+    if (["email.bounced", "email.delivery_delayed", "email.complained"].includes(eventType)) {
+      return await handleBounceEvent(supabase, eventType, payload.data || payload);
+    }
+
+    // If this is a delivery success event, just acknowledge
+    if (["email.delivered", "email.sent", "email.opened", "email.clicked"].includes(eventType)) {
+      console.log(`Delivery event: ${eventType}`);
+      // Optionally update email status to 'delivered'
+      if (eventType === "email.delivered" && (payload.data?.email_id || payload.email_id)) {
+        const deliveredResendId = payload.data?.email_id || payload.email_id;
+        await supabase
+          .from("emails")
+          .update({ status: "delivered" })
+          .eq("resend_id", deliveredResendId)
+          .eq("status", "sent"); // Only update if still "sent"
+      }
+      return new Response(JSON.stringify({ success: true, handler: "delivery_event", event: eventType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ═══ Inbound email processing ═══
     // Extract email data
     const fromEmail = payload.from || payload.data?.from || "";
     const fromName = payload.from_name || payload.data?.from_name || null;
