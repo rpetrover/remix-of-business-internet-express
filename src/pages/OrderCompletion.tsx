@@ -13,6 +13,7 @@ import { ArrowLeft, Check, Wifi, Phone, Tv, CheckCircle, Mail, Upload, Shield, A
 import { Textarea } from '@/components/ui/textarea';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -20,6 +21,7 @@ import { getCustomerContext, clearCustomerContext } from '@/hooks/useCustomerCon
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import CheckoutUpsells from '@/components/CheckoutUpsells';
 import IndustryAutocomplete from '@/components/IndustryAutocomplete';
+import InstallationScheduler, { type InstallationSelection } from '@/components/InstallationScheduler';
 import type { PlaceResult } from '@/hooks/useGooglePlaces';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
 import { trackPurchase, trackBeginCheckout, setUserData } from '@/lib/analytics';
@@ -156,6 +158,10 @@ const OrderCompletion = () => {
   const [portingBillFile, setPortingBillFile] = useState<File | null>(null);
   const orderSubmittedRef = useRef(false);
 
+  // Installation schedule state
+  const [installPrimary, setInstallPrimary] = useState<InstallationSelection>({ date: undefined, time: '' });
+  const [installSecondary, setInstallSecondary] = useState<InstallationSelection>({ date: undefined, time: '' });
+
   // Give the cart time to load/migrate after auth before redirecting
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
@@ -225,6 +231,26 @@ const OrderCompletion = () => {
         }
       }
       
+      // Validate installation schedule
+      const installErrors: Record<string, string> = {};
+      if (!installPrimary.date) {
+        installErrors.primaryDate = 'Please select a preferred installation date';
+      }
+      if (!installPrimary.time) {
+        installErrors.primaryTime = 'Please select a preferred installation time';
+      }
+      if (!installSecondary.date) {
+        installErrors.secondaryDate = 'Please select a backup installation date';
+      }
+      if (!installSecondary.time) {
+        installErrors.secondaryTime = 'Please select a backup installation time';
+      }
+
+      if (Object.keys(installErrors).length > 0) {
+        setErrors(installErrors);
+        return false;
+      }
+
       setErrors({});
       return true;
     } catch (error) {
@@ -235,6 +261,13 @@ const OrderCompletion = () => {
             newErrors[err.path[0] as string] = err.message;
           }
         });
+
+        // Also check installation schedule even on zod error
+        if (!installPrimary.date) newErrors.primaryDate = 'Please select a preferred installation date';
+        if (!installPrimary.time) newErrors.primaryTime = 'Please select a preferred installation time';
+        if (!installSecondary.date) newErrors.secondaryDate = 'Please select a backup installation date';
+        if (!installSecondary.time) newErrors.secondaryTime = 'Please select a backup installation time';
+
         setErrors(newErrors);
       } else {
         setErrors({ general: (error as Error).message });
@@ -341,6 +374,8 @@ const OrderCompletion = () => {
           formData.industry ? `Industry: ${formData.industry}` : '',
           formData.businessTaxId ? `Tax ID: ${formData.businessTaxId}` : '',
           formData.hasLiquorLicense ? `Liquor License: Yes${formData.licensedOccupancy ? `, Occupancy: ${formData.licensedOccupancy}` : ''}` : '',
+          installPrimary.date ? `Install 1st Choice: ${format(installPrimary.date, 'MMM d, yyyy')} at ${installPrimary.time}` : '',
+          installSecondary.date ? `Install 2nd Choice: ${format(installSecondary.date, 'MMM d, yyyy')} at ${installSecondary.time}` : '',
           formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : '',
         ].filter(Boolean).join(' | ') || null,
         cart_items: cartItems.map(item => ({
@@ -716,7 +751,21 @@ const OrderCompletion = () => {
                       {formData.additionalNotes.length}/500 characters
                     </p>
                     {errors.additionalNotes && <p className="text-sm text-destructive mt-1">{errors.additionalNotes}</p>}
-                  </div>
+                </div>
+
+                {/* Installation Schedule */}
+                <InstallationScheduler
+                  primary={installPrimary}
+                  secondary={installSecondary}
+                  onPrimaryChange={setInstallPrimary}
+                  onSecondaryChange={setInstallSecondary}
+                  errors={{
+                    primaryDate: errors.primaryDate,
+                    primaryTime: errors.primaryTime,
+                    secondaryDate: errors.secondaryDate,
+                    secondaryTime: errors.secondaryTime,
+                  }}
+                />
                 </div>
 
 
