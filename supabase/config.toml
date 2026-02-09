@@ -68,3 +68,9 @@ verify_jwt = false
 
 [functions.scan-spectrum-newsroom]
 verify_jwt = false
+
+[functions.auto-caller]
+verify_jwt = false
+
+[functions.continuous-discovery]
+verify_jwt = false
