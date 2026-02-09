@@ -692,6 +692,140 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_campaign_runs: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          status: string
+          total_calls_made: number | null
+          total_conversions: number | null
+          total_emails_sent: number | null
+          total_leads_found: number | null
+          updated_at: string
+          zip_codes: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          total_calls_made?: number | null
+          total_conversions?: number | null
+          total_emails_sent?: number | null
+          total_leads_found?: number | null
+          updated_at?: string
+          zip_codes?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          total_calls_made?: number | null
+          total_conversions?: number | null
+          total_emails_sent?: number | null
+          total_leads_found?: number | null
+          updated_at?: string
+          zip_codes?: string[]
+        }
+        Relationships: []
+      }
+      outbound_leads: {
+        Row: {
+          address: string | null
+          business_name: string
+          business_type: string | null
+          call_outcome: string | null
+          call_recording_url: string | null
+          call_sid: string | null
+          call_transcript: string | null
+          campaign_status: string
+          city: string | null
+          converted_order_id: string | null
+          created_at: string
+          discovery_batch: string | null
+          drip_step: number
+          email: string | null
+          google_place_id: string | null
+          id: string
+          last_call_at: string | null
+          last_email_sent_at: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          business_type?: string | null
+          call_outcome?: string | null
+          call_recording_url?: string | null
+          call_sid?: string | null
+          call_transcript?: string | null
+          campaign_status?: string
+          city?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          discovery_batch?: string | null
+          drip_step?: number
+          email?: string | null
+          google_place_id?: string | null
+          id?: string
+          last_call_at?: string | null
+          last_email_sent_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          business_type?: string | null
+          call_outcome?: string | null
+          call_recording_url?: string | null
+          call_sid?: string | null
+          call_transcript?: string | null
+          campaign_status?: string
+          city?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          discovery_batch?: string | null
+          drip_step?: number
+          email?: string | null
+          google_place_id?: string | null
+          id?: string
+          last_call_at?: string | null
+          last_email_sent_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbound_leads_converted_order_id_fkey"
+            columns: ["converted_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall, LogOut } from 'lucide-react';
+import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall, LogOut, Radar } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
 import AdminCampaigns from '@/components/admin/AdminCampaigns';
@@ -12,6 +12,7 @@ import AdminFollowUps from '@/components/admin/AdminFollowUps';
 import AdminCallLog from '@/components/admin/AdminCallLog';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminSettings from '@/components/admin/AdminSettings';
+import AdminOutboundCampaigns from '@/components/admin/AdminOutboundCampaigns';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const Admin = () => {
@@ -121,6 +122,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="outbound" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Radar className="h-4 w-4" />
+              Outbound
+            </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Settings className="h-4 w-4" />
               Settings
@@ -136,6 +141,7 @@ const Admin = () => {
           <TabsContent value="follow-ups"><AdminFollowUps /></TabsContent>
           <TabsContent value="call-log"><AdminCallLog /></TabsContent>
           <TabsContent value="analytics"><AdminAnalytics /></TabsContent>
+          <TabsContent value="outbound"><AdminOutboundCampaigns /></TabsContent>
           <TabsContent value="settings"><AdminSettings /></TabsContent>
         </Tabs>
       </div>
