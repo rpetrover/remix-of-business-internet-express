@@ -34,6 +34,8 @@ Deno.serve(async (req) => {
       preferred_provider,
       lead_id,
       notes,
+      installation_date,
+      installation_date2,
     } = body;
 
     // Validate required fields
@@ -63,7 +65,11 @@ Deno.serve(async (req) => {
         preferred_provider: preferred_provider || "Spectrum",
         channel: "outbound_call",
         status: "pending",
-        notes: notes || "Order placed via AI sales call",
+        notes: [
+          notes || "Order placed via AI sales call",
+          installation_date ? `Preferred install 1: ${installation_date}` : null,
+          installation_date2 ? `Preferred install 2: ${installation_date2}` : null,
+        ].filter(Boolean).join(" | "),
         service_type: "Business internet service only",
       })
       .select()
@@ -118,6 +124,8 @@ Deno.serve(async (req) => {
               <p><strong>Order ID:</strong> ${order.id}</p>
               <p><strong>Channel:</strong> Outbound AI Sales Call</p>
               ${lead_id ? `<p><strong>Lead ID:</strong> ${lead_id}</p>` : ""}
+              ${installation_date ? `<p><strong>Preferred Install Date 1:</strong> ${installation_date}</p>` : ""}
+              ${installation_date2 ? `<p><strong>Preferred Install Date 2:</strong> ${installation_date2}</p>` : ""}
               <hr>
               <p>This order was placed by the customer directly on the phone with our AI sales agent.</p>
             `,
@@ -145,7 +153,8 @@ Deno.serve(async (req) => {
                   <li><strong>Plan:</strong> ${selected_plan || "Business Internet"}</li>
                   <li><strong>Speed:</strong> ${speed || "Up to 1 Gbps"}</li>
                 </ul>
-                <p>Our team will be in touch shortly to schedule your installation.</p>
+                ${installation_date ? `<p><strong>Preferred Installation:</strong> ${installation_date}${installation_date2 ? ` or ${installation_date2}` : ""}</p>` : ""}
+                <p>Our team will be in touch shortly to confirm your installation window.</p>
                 <p>If you have any questions, call us at <a href="tel:+18882303278">1-888-230-FAST</a> or visit 
                 <a href="https://businessinternetexpress.com">businessinternetexpress.com</a>.</p>
                 <p>Best regards,<br>Business Internet Express Team</p>
