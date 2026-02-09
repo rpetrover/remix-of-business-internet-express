@@ -139,9 +139,18 @@ Wireless cellular plans bundled for business users.
 ### Comcast Business (Xfinity Business)
 - **Technology:** HFC cable + fiber
 - **Coverage:** 40+ states, major metros
-- **Speeds:** 200 Mbps, 400 Mbps, 800 Mbps
-- **Pricing:** $49.99–$99.99/month
-- **Highlights:** SecurityEdge cybersecurity included, business-grade WiFi, no data caps, Connection Pro automatic 4G LTE backup available
+- **Plans (Rate Card Pricing):**
+  - Business Internet Essential (150/25 Mbps): $99.95/mo
+  - Business Internet Standard (300/35 Mbps): $149.95/mo
+  - Business Internet Performance (500/35 Mbps): $199.95/mo
+  - Business Internet Advanced (800/35 Mbps): $249.95/mo
+  - Business Internet Gigabit Extra (1.25G/35 Mbps): $399.95/mo
+  - Business Internet 2 Gigabit (2G/200 Mbps): $499.95/mo
+- **Promotional pricing available** (e.g., Performance + SecurityEdge from $120/mo on 2-year term)
+- **Pricing:** $99.95–$499.95/month (rate card); promotional bundles start lower
+- **Add-ons:** SecurityEdge ($29.95/mo), WiFi Pro ($14.95/mo), Connection Pro ($29.95/mo), Static IP (1 IP $34.95/mo)
+- **Installation:** $129.95 new customer (truck roll); $29.95–$69.95 existing customer
+- **Highlights:** SecurityEdge cybersecurity available, business-grade WiFi, no data caps, Connection Pro automatic 4G LTE backup available
 - **Best for:** Businesses wanting bundled security and extensive nationwide availability
 
 ### Verizon Business (Fios)
