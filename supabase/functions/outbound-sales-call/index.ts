@@ -185,7 +185,11 @@ Deno.serve(async (req) => {
       // Format phone number
       let phoneNumber = lead.phone.replace(/[^0-9+]/g, "");
       if (!phoneNumber.startsWith("+")) {
-        phoneNumber = "+1" + phoneNumber;
+        if (phoneNumber.startsWith("1") && phoneNumber.length === 11) {
+          phoneNumber = "+" + phoneNumber;
+        } else {
+          phoneNumber = "+1" + phoneNumber;
+        }
       }
 
       // Initiate the Twilio call
