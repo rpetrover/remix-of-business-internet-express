@@ -25,6 +25,47 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log(`Phone order webhook (action=${action || "order"}):`, JSON.stringify(body));
 
+    // ========== GATEKEEPER LOG ==========
+    if (action === "gatekeeper") {
+      const { lead_id, gatekeeper_encountered, decision_maker_reached, decision_maker_name, decision_maker_title, callback_time, notes } = body;
+
+      if (!lead_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: "lead_id is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await supabase
+        .from("outbound_leads")
+        .update({
+          gatekeeper_encountered: gatekeeper_encountered ?? true,
+          decision_maker_reached: decision_maker_reached ?? false,
+          decision_maker_name: decision_maker_name || undefined,
+          decision_maker_title: decision_maker_title || undefined,
+          callback_time: callback_time || undefined,
+          notes: [
+            decision_maker_name ? `DM: ${decision_maker_name}` : null,
+            decision_maker_title ? `Title: ${decision_maker_title}` : null,
+            callback_time ? `Callback: ${callback_time}` : null,
+            notes,
+          ].filter(Boolean).join(" | ") || undefined,
+        })
+        .eq("id", lead_id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: decision_maker_reached
+            ? "Great — you've been connected to the decision-maker. Proceed with the conversation."
+            : callback_time
+              ? `Got it — call back ${callback_time}. Info saved.`
+              : "Gatekeeper interaction logged. Try again later.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ========== COMPARISON REQUEST (Close B / Close C) ==========
     if (action === "comparison") {
       const {

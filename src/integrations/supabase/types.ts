@@ -743,14 +743,19 @@ export type Database = {
           call_recording_url: string | null
           call_sid: string | null
           call_transcript: string | null
+          callback_time: string | null
           campaign_status: string
           city: string | null
           converted_order_id: string | null
           created_at: string
+          decision_maker_name: string | null
+          decision_maker_reached: boolean | null
+          decision_maker_title: string | null
           discovery_batch: string | null
           drip_step: number
           email: string | null
           fiber_launch_source: string | null
+          gatekeeper_encountered: boolean | null
           google_place_id: string | null
           id: string
           is_fiber_launch_area: boolean | null
@@ -774,14 +779,19 @@ export type Database = {
           call_recording_url?: string | null
           call_sid?: string | null
           call_transcript?: string | null
+          callback_time?: string | null
           campaign_status?: string
           city?: string | null
           converted_order_id?: string | null
           created_at?: string
+          decision_maker_name?: string | null
+          decision_maker_reached?: boolean | null
+          decision_maker_title?: string | null
           discovery_batch?: string | null
           drip_step?: number
           email?: string | null
           fiber_launch_source?: string | null
+          gatekeeper_encountered?: boolean | null
           google_place_id?: string | null
           id?: string
           is_fiber_launch_area?: boolean | null
@@ -805,14 +815,19 @@ export type Database = {
           call_recording_url?: string | null
           call_sid?: string | null
           call_transcript?: string | null
+          callback_time?: string | null
           campaign_status?: string
           city?: string | null
           converted_order_id?: string | null
           created_at?: string
+          decision_maker_name?: string | null
+          decision_maker_reached?: boolean | null
+          decision_maker_title?: string | null
           discovery_batch?: string | null
           drip_step?: number
           email?: string | null
           fiber_launch_source?: string | null
+          gatekeeper_encountered?: boolean | null
           google_place_id?: string | null
           id?: string
           is_fiber_launch_area?: boolean | null
