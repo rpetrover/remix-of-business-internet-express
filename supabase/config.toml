@@ -56,3 +56,12 @@ verify_jwt = false
 
 [functions.refund-order]
 verify_jwt = false
+
+[functions.discover-leads]
+verify_jwt = false
+
+[functions.outbound-drip]
+verify_jwt = false
+
+[functions.outbound-sales-call]
+verify_jwt = false
