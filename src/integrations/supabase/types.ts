@@ -763,10 +763,13 @@ export type Database = {
           last_email_sent_at: string | null
           latitude: number | null
           longitude: number | null
+          next_followup_datetime: string | null
           notes: string | null
           objections_triggered: string[] | null
           opening_variant: string | null
           phone: string | null
+          qualifying_answers: Json | null
+          sms_consent: boolean | null
           state: string | null
           updated_at: string
           website: string | null
@@ -800,10 +803,13 @@ export type Database = {
           last_email_sent_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          next_followup_datetime?: string | null
           notes?: string | null
           objections_triggered?: string[] | null
           opening_variant?: string | null
           phone?: string | null
+          qualifying_answers?: Json | null
+          sms_consent?: boolean | null
           state?: string | null
           updated_at?: string
           website?: string | null
@@ -837,10 +843,13 @@ export type Database = {
           last_email_sent_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          next_followup_datetime?: string | null
           notes?: string | null
           objections_triggered?: string[] | null
           opening_variant?: string | null
           phone?: string | null
+          qualifying_answers?: Json | null
+          sms_consent?: boolean | null
           state?: string | null
           updated_at?: string
           website?: string | null
