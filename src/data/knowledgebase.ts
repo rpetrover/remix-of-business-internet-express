@@ -110,13 +110,23 @@ Wireless cellular plans bundled for business users.
 ## PROVIDER PORTFOLIO — BROADBAND
 
 ### Spectrum Business (Preferred Partner)
-- **Technology:** Hybrid Fiber-Coaxial (HFC) cable + fiber
+- **Technology:** Hybrid Fiber-Coaxial (HFC) cable + FTTP fiber (upgraded markets offer symmetric speeds)
 - **Coverage:** 41 states, 113 million+ homes and businesses passed
-- **Speeds:** 300 Mbps, 500 Mbps, 1 Gbps
-- **Pricing:** $49.99–$69.99/month
-- **Highlights:** No data caps, free modem, free installation, 24/7 U.S.-based support, WiFi 6 router on Gig plan, static IP included on Gig, no annual contracts
-- **Installation:** Often same-day or next-day
-- **Best for:** Small to mid-size businesses needing reliable, affordable connectivity with fast setup
+- **Plans (SBPP Internet Only — Acquisition Pricing, MTM):**
+  - Internet Premier: 500 Mbps (500x500 in upgraded markets) — $65.00/mo
+  - Internet Ultra: 750 Mbps (750x750 in upgraded markets) — $95.00/mo
+  - Internet Gig: 1 Gbps (1Gx1G in upgraded markets) — $115.00/mo
+- **Enterprise Internet (EI) — Contract Terms Available:**
+  - 100 Mbps: $80–$175/mo (1–5 year terms)
+  - 500 Mbps: $115–$225/mo (1–5 year terms)
+  - 1 Gbps: $160–$300/mo (1–5 year terms)
+- **Dedicated Fiber Internet (DFI) — Contract Terms Available:**
+  - 100 Mbps: $400–$750/mo | 500 Mbps: $650–$1,250/mo | 1 Gbps: $775–$1,500/mo
+  - Up to 100 Gbps available
+  - On-Net promotional pricing available for qualifying buildings
+- **Highlights:** No data caps, free modem, $99 standard installation, 24/7 U.S.-based support, static IP available ($20/mo for 1 IP), Business WiFi free with Gig plan, month-to-month available
+- **Installation:** Often same-day or next-day for SBPP; DFI/EI varies
+- **Best for:** Small to enterprise businesses needing reliable connectivity from coax broadband to dedicated fiber
 
 ### AT&T Business
 - **Technology:** Fiber (FTTP) and IPBB (fiber-to-the-node + VDSL)
