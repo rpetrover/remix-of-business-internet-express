@@ -66,6 +66,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ========== OBJECTION LOG ==========
+    if (action === "objection") {
+      const { lead_id, objection_key, notes } = body;
+
+      if (!lead_id || !objection_key) {
+        return new Response(
+          JSON.stringify({ success: false, error: "lead_id and objection_key are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Append to objections_triggered array (avoid duplicates)
+      const { data: lead } = await supabase
+        .from("outbound_leads")
+        .select("objections_triggered")
+        .eq("id", lead_id)
+        .maybeSingle();
+
+      const existing: string[] = (lead?.objections_triggered as string[]) || [];
+      const updated = existing.includes(objection_key) ? existing : [...existing, objection_key];
+
+      await supabase
+        .from("outbound_leads")
+        .update({ objections_triggered: updated })
+        .eq("id", lead_id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Objection '${objection_key}' logged. Continue handling the conversation.`,
+          objections_so_far: updated,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ========== COMPARISON REQUEST (Close B / Close C) ==========
     if (action === "comparison") {
       const {

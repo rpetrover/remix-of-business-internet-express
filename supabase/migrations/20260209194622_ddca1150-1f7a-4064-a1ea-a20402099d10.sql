@@ -1,0 +1,1 @@
+ALTER TABLE public.outbound_leads ADD COLUMN IF NOT EXISTS objections_triggered text[] DEFAULT '{}';
