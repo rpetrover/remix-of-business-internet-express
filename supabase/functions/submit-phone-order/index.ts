@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         order_id: order.id,
-        message: `Order successfully placed for ${customer_name}. Order reference number is ${order.id.substring(0, 8).toUpperCase()}.`,
+        message: `Order successfully placed for ${customer_name}. Order reference number is ${order.id.substring(0, 6).toUpperCase()}.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
