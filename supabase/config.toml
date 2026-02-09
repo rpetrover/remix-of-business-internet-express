@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.daily-report]
 verify_jwt = false
+
+[functions.proxy-recording]
+verify_jwt = false

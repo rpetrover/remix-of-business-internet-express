@@ -104,7 +104,7 @@ const AdminCallLog = () => {
     }
   };
 
-  const togglePlayback = () => {
+  const togglePlayback = async () => {
     if (!selectedCall?.recording_url) return;
 
     if (audioRef.current) {
@@ -116,18 +116,37 @@ const AdminCallLog = () => {
         setIsPlaying(true);
       }
     } else {
-      // For ElevenLabs audio URLs, we need to proxy through our edge function
-      // For direct URLs (Twilio), play directly
-      const audioUrl = selectedCall.recording_url;
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
-        setIsPlaying(false);
-        toast({ title: "Playback error", description: "Could not play this recording. It may still be processing.", variant: "destructive" });
-      };
-      audio.play();
-      setIsPlaying(true);
+      try {
+        // Proxy through edge function to handle Twilio auth
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-recording`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ recording_url: selectedCall.recording_url }),
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch recording");
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          setIsPlaying(false);
+          toast({ title: "Playback error", description: "Could not play this recording.", variant: "destructive" });
+        };
+        audio.play();
+        setIsPlaying(true);
+      } catch (e) {
+        toast({ title: "Playback error", description: "Could not load recording. It may still be processing.", variant: "destructive" });
+      }
     }
   };
 
@@ -371,14 +390,39 @@ const AdminCallLog = () => {
                           </>
                         )}
                       </Button>
-                      <a
-                        href={selectedCall.recording_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(
+                              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-recording`,
+                              {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                                },
+                                body: JSON.stringify({ recording_url: selectedCall.recording_url }),
+                              }
+                            );
+                            if (!response.ok) throw new Error("Download failed");
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `recording-${selectedCall.call_sid || selectedCall.id}.mp3`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch {
+                            toast({ title: "Error", description: "Could not download recording.", variant: "destructive" });
+                          }
+                        }}
+                        className="text-sm text-primary"
                       >
                         Download
-                      </a>
+                      </Button>
                     </div>
                   </div>
                 )}
