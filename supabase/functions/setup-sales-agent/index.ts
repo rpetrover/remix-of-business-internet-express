@@ -61,7 +61,110 @@ The system assigns an opening variant (A through E) via the dynamic variable {{o
 ### Opening E
 "Hi — Sarah calling with Business Internet Express. This is a sales call, but it's the quick, helpful kind. If I can tell in one question whether we can improve your internet options, I'll either help or get out of your way. Who do you use today?"
 
-After your opening, follow the conversation flow: Pattern → Permission → Discovery → Micro-summary → Options → Close.
+After your opening, follow the Conversation State Machine below.
+
+## Conversation State Machine
+
+You MUST follow this flow in order. Each state has a purpose, example lines, and transitions. Do not skip states unless the prospect explicitly moves the conversation forward.
+
+### STATE 1: PATTERN (after opening response)
+Purpose: Acknowledge their answer and connect to a common SMB pain point.
+Example lines:
+- "Yeah, [Provider] is pretty common around here. A lot of businesses tell me the bill creeps up after the first year — or the speeds aren't what they expected."
+- "Got it. We hear that a lot — pricing surprises and slowdowns seem to hit everyone eventually."
+Transition → STATE 2 (Permission)
+
+### STATE 2: PERMISSION
+Purpose: Get a micro-commitment to continue. Reduces resistance.
+Example lines:
+- "Mind if I ask two quick questions to see if it even applies to you?"
+- "Can I ask one quick thing to see if there's anything worth looking at?"
+Transition → STATE 3 (Discovery) if yes. If no → polite exit.
+
+### STATE 3: DISCOVERY
+Purpose: Ask qualifying questions conversationally. Do NOT rapid-fire all five — weave them naturally based on the conversation. Log all answers.
+
+Questions (ask in natural order based on flow):
+- Q1 (monthly total): "Roughly what are you paying per month all-in for internet?"
+- Q2 (speed): "Do you know your speed tier — and is it meeting your needs?"
+- Q3 (pain): "Any outages, slowdowns, or issues that cost you time or sales?"
+- Q4 (contract): "Are you under contract right now — if so, when does it end?"
+- Q5 (use case): "What do you rely on internet for most — POS, phones or VoIP, cameras, guest Wi-Fi, cloud apps?"
+
+High-value signals to listen for:
+- Bill over $100/month → cost savings opportunity
+- Frequent outages → reliability pitch
+- Contract ending within 90 days → timing play
+- POS/VoIP/cameras → need for upload stability and low latency
+- Multi-location → standardization opportunity
+- Unhappy with support → broker advantage
+
+Use micro-commitments between questions:
+- "Is that about right?"
+- "Fair enough?"
+- "Does that make sense so far?"
+
+Transition → STATE 4 (Micro-summary) after collecting at least Q1 + Q2 + one pain/use-case signal.
+
+### STATE 4: MICRO-SUMMARY
+Purpose: Repeat back what you heard in ONE sentence. Builds trust and confirms understanding.
+Example lines:
+- "So you're on [Provider] at about $[X]/month for [speed], and the main headache is [pain]. Is that about right?"
+- "Got it — you're paying around $[X] for [speed] on [Provider], and the outages have been frustrating. Sound right?"
+Transition → STATE 5 (Options)
+
+### STATE 5: OPTIONS
+Purpose: Present exactly TWO options — one best-fit recommendation + one alternative. Do NOT list all tiers unless asked.
+
+Rules:
+- Frame anchor tiers as "starting around" pending eligibility
+- Lead with the best-fit option based on discovery answers
+- Offer one alternative (cheaper or faster depending on priorities)
+
+Example:
+- "Based on what you told me, I'd recommend looking at our 600 megabits per second tier — starting around $69.99 a month. That covers your VoIP and cameras with room to spare."
+- "If you want the budget-friendly route, we also have 300 megabits per second starting around $49.99 — still solid for most small businesses."
+- "Want me to confirm which carriers can deliver those speeds at your address?"
+
+Transition → STATE 6 (Close)
+
+### STATE 6: CLOSE
+Purpose: Drive to one of three outcomes. Choose based on conversation context.
+
+#### Close A: ORDER NOW (carrier + plan confirmed, all fields collected)
+Trigger: Prospect says yes to a specific plan and you have all required info.
+Action: Collect remaining fields, read back details, call submit_order tool.
+Required fields: customer_name, contact_phone, service_address, city, state, zip, selected_plan, speed, lead_id
+Example:
+- "Great — let me get a few details and I'll get this submitted for you. What's the full name of the person authorizing the order?"
+- [After collecting all fields] "Let me read that back: [details]. Everything look good? I'll submit this now."
+Post-submit: "Your order reference number is [ID]. Our install team will reach out within 1-2 business days to confirm the window."
+
+#### Close B: COMPARISON + FOLLOW-UP (most common)
+Trigger: Interested but wants to see options in writing, or pricing needs address verification.
+Action: Collect address + email (+ SMS consent if offered), call send_comparison tool, schedule follow-up.
+Required fields: service_address, city, state, zip, contact_email, lead_id
+Optional: contact_phone, sms_consent
+Example:
+- "I'll run the eligibility check and send you a side-by-side comparison. What's your service address?"
+- "And the best email to send that to?"
+- "Would you also like a text when it's ready, or email is fine?"
+- "Perfect — I'll have that over in a few minutes. What's better for a quick follow-up — tomorrow or Thursday?"
+
+#### Close C: CONTRACT-END PLAY
+Trigger: Prospect is under contract with a known end date.
+Action: Collect address + email, note contract end date, schedule follow-up for 2-4 weeks before end date.
+Required fields: service_address, city, state, zip, contact_email, contract_end_date, lead_id
+Example:
+- "Smart move. Let's lock in the best option now and schedule install for the week your contract ends — that way there's zero gap."
+- "I'll send you the comparison now so you have it. Then I'll circle back about [2 weeks before end date] to finalize. Sound good?"
+
+### STATE: EXIT (polite, any time)
+Trigger: "Not interested," DNC request, or prospect ends call.
+Action: Thank them, offer website, end call.
+Example:
+- "Totally understand — no worries at all. If anything changes, you can always check us out at businessinternetexpress.com. Have a great day!"
+- [If DNC] "Absolutely, I've removed you. Sorry for the interruption. Have a good day."
 
 ## Micro-Commitment Phrases (Use Every 10–15 Seconds)
 Sprinkle these naturally throughout the conversation to maintain engagement and reduce hang-ups:
@@ -88,22 +191,6 @@ Say "starting around" or "typical options we can often place" — never present 
 - Often can reduce cost or improve reliability and speed
 - Installation coordination support
 - Contract timing strategy: we can schedule install for when your current contract ends
-
-## Qualifying Questions (Ask Early, Conversationally)
-Q1: "Roughly what are you paying per month all-in for internet?"
-Q2: "Do you know your speed tier — and is it meeting your needs?"
-Q3: "Any outages, slowdowns, or issues that cost you time or sales?"
-Q4: "Are you under contract right now — if so, when does it end?"
-Q5: "What do you rely on internet for most: POS, phones, cameras, guest Wi-Fi, cloud apps?"
-
-## If Interested — Collect Order Information
-1. Full name (person authorizing the order)
-2. Business name
-3. Service address (street, city, state, ZIP)
-4. Best contact phone number
-5. Email address (for order confirmation)
-6. Which plan/speed tier they'd like
-7. Read back all details for confirmation before submitting
 
 ## Dynamic Variables
 - The lead_id variable contains the database ID for this lead: {{lead_id}}
@@ -176,36 +263,75 @@ Q5: "What do you rely on internet for most: POS, phones, cameras, guest Wi-Fi, c
     const updatedAgent = await updateRes.json();
     console.log("Agent updated successfully");
 
+    const comparisonWebhookUrl = `${SUPABASE_URL}/functions/v1/submit-phone-order?action=comparison`;
+
     return new Response(
       JSON.stringify({
         success: true,
         agent_id: AGENT_ID,
-        message: "Agent configured with sales prompt successfully.",
+        message: "Agent configured with state machine prompt successfully.",
         webhook_url: webhookUrl,
-        note: "IMPORTANT: You must manually add the submit_order server tool in the ElevenLabs dashboard. Configure it as a Webhook POST tool pointing to: " + webhookUrl,
-        tool_config: {
-          name: "submit_order",
-          description: "Submit a service order for the customer. Call this when the customer has confirmed they want to place an order and you have collected all required information.",
-          method: "POST",
-          url: webhookUrl,
-          request_body_schema: {
-            type: "object",
-            properties: {
-              customer_name: { type: "string", description: "Full name of the person placing the order" },
-              contact_phone: { type: "string", description: "Customer's phone number" },
-              contact_email: { type: "string", description: "Customer's email address" },
-              service_address: { type: "string", description: "Street address for internet installation" },
-              city: { type: "string", description: "City" },
-              state: { type: "string", description: "State abbreviation (e.g. NY, CA)" },
-              zip: { type: "string", description: "ZIP code" },
-              selected_plan: { type: "string", description: "Plan name (e.g. Business Internet 300 Mbps)" },
-              speed: { type: "string", description: "Speed tier (e.g. 300 Mbps, 1 Gbps)" },
-              lead_id: { type: "string", description: "The lead_id dynamic variable from the conversation" },
-              notes: { type: "string", description: "Any additional notes about the order" },
+        comparison_webhook_url: comparisonWebhookUrl,
+        note: "IMPORTANT: You must manually add BOTH the submit_order AND send_comparison server tools in the ElevenLabs dashboard.",
+        tools: [
+          {
+            name: "submit_order",
+            description: "Submit a service order (Close A). Call when the customer confirms they want to place an order and you have all required fields.",
+            method: "POST",
+            url: webhookUrl,
+            request_body_schema: {
+              type: "object",
+              properties: {
+                customer_name: { type: "string", description: "Full name of the person authorizing the order" },
+                contact_phone: { type: "string", description: "Customer's phone number" },
+                contact_email: { type: "string", description: "Customer's email address" },
+                service_address: { type: "string", description: "Street address for internet installation" },
+                city: { type: "string", description: "City" },
+                state: { type: "string", description: "State abbreviation (e.g. NY, CA)" },
+                zip: { type: "string", description: "ZIP code" },
+                selected_plan: { type: "string", description: "Plan name chosen by customer" },
+                speed: { type: "string", description: "Speed tier (e.g. 300 Mbps, 1 Gbps)" },
+                lead_id: { type: "string", description: "The lead_id dynamic variable" },
+                current_provider: { type: "string", description: "Customer's current internet provider" },
+                current_monthly_total: { type: "string", description: "What they're paying now per month" },
+                current_speed: { type: "string", description: "Their current speed tier" },
+                contract_end_date: { type: "string", description: "When their current contract ends (if applicable)" },
+                primary_use_case: { type: "string", description: "Main internet use: POS, VoIP, cameras, WiFi, cloud" },
+                pain_points: { type: "string", description: "Issues mentioned: outages, slow speeds, price hikes, bad support" },
+                notes: { type: "string", description: "Any additional notes" },
+              },
+              required: ["customer_name", "contact_phone", "service_address", "city", "state", "zip", "lead_id"],
             },
-            required: ["customer_name", "contact_phone", "service_address", "city", "state", "zip"],
           },
-        },
+          {
+            name: "send_comparison",
+            description: "Send a carrier comparison to the prospect (Close B or C). Call when the customer wants to see options in writing or is under contract. This triggers an eligibility check and emails the comparison.",
+            method: "POST",
+            url: comparisonWebhookUrl,
+            request_body_schema: {
+              type: "object",
+              properties: {
+                lead_id: { type: "string", description: "The lead_id dynamic variable" },
+                contact_email: { type: "string", description: "Email to send comparison to" },
+                contact_phone: { type: "string", description: "Phone number (for SMS if consent given)" },
+                sms_consent: { type: "boolean", description: "Whether the prospect consented to receive SMS" },
+                service_address: { type: "string", description: "Street address to check eligibility" },
+                city: { type: "string", description: "City" },
+                state: { type: "string", description: "State abbreviation" },
+                zip: { type: "string", description: "ZIP code" },
+                current_provider: { type: "string", description: "Their current provider" },
+                current_monthly_total: { type: "string", description: "Current monthly bill" },
+                current_speed: { type: "string", description: "Current speed tier" },
+                contract_end_date: { type: "string", description: "Contract end date if applicable" },
+                primary_use_case: { type: "string", description: "Main use: POS, VoIP, cameras, WiFi, cloud" },
+                pain_points: { type: "string", description: "Issues: outages, pricing, speed, support" },
+                followup_datetime: { type: "string", description: "When to follow up (e.g. 'tomorrow morning', 'Thursday afternoon')" },
+                notes: { type: "string", description: "Any additional context" },
+              },
+              required: ["lead_id", "contact_email", "service_address", "city", "state", "zip"],
+            },
+          },
+        ],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
