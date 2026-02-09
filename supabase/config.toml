@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.fetch-call-details]
 verify_jwt = false
+
+[functions.optimization-orchestrator]
+verify_jwt = false
