@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Search, Phone, Mail, Loader2, MapPin, Building2, RefreshCw, Play, Trash2,
+  Search, Phone, Mail, Loader2, MapPin, Building2, RefreshCw, Play, Pause, Trash2,
   Newspaper, Flame, ExternalLink, ChevronLeft, ChevronRight, ArrowUpDown,
-  ArrowUp, ArrowDown, Filter, CheckSquare, Edit, X,
+  ArrowUp, ArrowDown, Filter, CheckSquare, Edit, X, FileText, Download,
+  ChevronDown, Save, User, Clock,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +35,12 @@ interface OutboundLead {
   last_email_sent_at: string | null;
   last_call_at: string | null;
   call_outcome: string | null;
+  call_recording_url: string | null;
+  call_transcript: string | null;
+  call_sid: string | null;
+  decision_maker_name: string | null;
+  decision_maker_title: string | null;
+  notes: string | null;
   created_at: string;
   is_fiber_launch_area?: boolean;
   fiber_launch_source?: string | null;
@@ -88,6 +97,13 @@ const AdminOutboundCampaigns = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState('');
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+  // Expanded lead detail
+  const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [editingLead, setEditingLead] = useState<Partial<OutboundLead> | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const { toast } = useToast();
 
@@ -270,7 +286,117 @@ const AdminOutboundCampaigns = () => {
     }
   };
 
+  // Audio playback for lead recordings
+  const toggleLeadPlayback = async (recordingUrl: string) => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-recording`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ recording_url: recordingUrl }),
+        }
+      );
+      if (!response.ok) throw new Error('Failed to fetch recording');
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => {
+        setIsPlaying(false);
+        toast({ title: 'Playback error', description: 'Could not play this recording.', variant: 'destructive' });
+      };
+      audio.play();
+      setIsPlaying(true);
+    } catch {
+      toast({ title: 'Playback error', description: 'Could not load recording.', variant: 'destructive' });
+    }
+  };
+
+  const downloadRecording = async (lead: OutboundLead) => {
+    if (!lead.call_recording_url) return;
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-recording`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ recording_url: lead.call_recording_url }),
+        }
+      );
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recording-${lead.business_name.replace(/\s+/g, '-')}-${lead.call_sid || lead.id}.mp3`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Error', description: 'Could not download recording.', variant: 'destructive' });
+    }
+  };
+
+  const handleExpandLead = (leadId: string) => {
+    if (expandedLeadId === leadId) {
+      setExpandedLeadId(null);
+      setEditingLead(null);
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; setIsPlaying(false); }
+    } else {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; setIsPlaying(false); }
+      setExpandedLeadId(leadId);
+      setEditingLead(null);
+    }
+  };
+
+  const startEditingLead = (lead: OutboundLead) => {
+    setEditingLead({
+      business_name: lead.business_name,
+      phone: lead.phone,
+      email: lead.email,
+      campaign_status: lead.campaign_status,
+      decision_maker_name: lead.decision_maker_name,
+      decision_maker_title: lead.decision_maker_title,
+      notes: lead.notes,
+    });
+  };
+
+  const saveLeadEdit = async (leadId: string) => {
+    if (!editingLead) return;
+    setIsSavingEdit(true);
+    const { error } = await supabase.from('outbound_leads').update(editingLead).eq('id', leadId);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Save failed', description: error.message });
+    } else {
+      toast({ title: 'Saved' });
+      setEditingLead(null);
+      fetchLeads();
+    }
+    setIsSavingEdit(false);
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
 
   // Stats from total count query (approximate from current filtered view)
   const filteredStats = {
@@ -448,32 +574,28 @@ const AdminOutboundCampaigns = () => {
                     </TableHeader>
                     <TableBody>
                       {leads.map((lead) => (
-                        <TableRow
+                        <React.Fragment key={lead.id}>
+                         <TableRow
                           key={lead.id}
-                          className={`${lead.is_fiber_launch_area ? 'bg-orange-50/50 dark:bg-orange-950/10' : ''} ${selectedIds.has(lead.id) ? 'bg-primary/5' : ''}`}
+                          className={`cursor-pointer ${lead.is_fiber_launch_area ? 'bg-orange-50/50 dark:bg-orange-950/10' : ''} ${selectedIds.has(lead.id) ? 'bg-primary/5' : ''} ${expandedLeadId === lead.id ? 'border-b-0' : ''}`}
+                          onClick={() => handleExpandLead(lead.id)}
                         >
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selectedIds.has(lead.id)}
                               onCheckedChange={() => toggleSelect(lead.id)}
                             />
                           </TableCell>
                           <TableCell>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                {lead.is_fiber_launch_area && (
-                                  <span title="Fiber launch area"><Flame className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" /></span>
-                                )}
+                            <div className="flex items-center gap-1.5">
+                              <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expandedLeadId === lead.id ? 'rotate-180' : ''}`} />
+                              {lead.is_fiber_launch_area && (
+                                <span title="Fiber launch area"><Flame className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" /></span>
+                              )}
+                              <div>
                                 <p className="font-medium text-sm">{lead.business_name}</p>
+                                {lead.business_type && <p className="text-[10px] text-muted-foreground">{lead.business_type}</p>}
                               </div>
-                              {lead.business_type && (
-                                <p className="text-[10px] text-muted-foreground">{lead.business_type}</p>
-                              )}
-                              {lead.website && (
-                                <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                                  {(() => { try { return new URL(lead.website).hostname; } catch { return lead.website; } })()}
-                                </a>
-                              )}
                             </div>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">{lead.city || '—'}</TableCell>
@@ -483,7 +605,7 @@ const AdminOutboundCampaigns = () => {
                           <TableCell>
                             <div className="text-xs space-y-0.5">
                               {lead.phone && <p>📞 {lead.phone}</p>}
-                              {lead.email && <p className="truncate max-w-[150px]" title={lead.email}>📧 {lead.email}</p>}
+                              {lead.email && <p className="truncate max-w-[150px]" title={lead.email || ''}>📧 {lead.email}</p>}
                               {!lead.phone && !lead.email && <span className="text-muted-foreground">—</span>}
                             </div>
                           </TableCell>
@@ -495,22 +617,18 @@ const AdminOutboundCampaigns = () => {
                           <TableCell className="text-center text-sm">{lead.drip_step}/5</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {lead.last_call_at ? new Date(lead.last_call_at).toLocaleDateString() : '—'}
-                            {lead.call_outcome && (
-                              <p className="text-[10px]">{lead.call_outcome}</p>
+                            {lead.call_outcome && <p className="text-[10px]">{lead.call_outcome}</p>}
+                            {lead.call_recording_url && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 mt-0.5 bg-primary/5">🎙️ Rec</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {new Date(lead.created_at).toLocaleDateString()}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex gap-1 justify-end">
                               {lead.phone && (
-                                <Button
-                                  size="sm" variant="outline"
-                                  onClick={() => handleCallLead(lead.id)}
-                                  disabled={callingLeadId === lead.id}
-                                  title="Call"
-                                >
+                                <Button size="sm" variant="outline" onClick={() => handleCallLead(lead.id)} disabled={callingLeadId === lead.id} title="Call">
                                   {callingLeadId === lead.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Phone className="h-3 w-3" />}
                                 </Button>
                               )}
@@ -520,6 +638,146 @@ const AdminOutboundCampaigns = () => {
                             </div>
                           </TableCell>
                         </TableRow>
+
+                        {/* Expanded Detail Row */}
+                        {expandedLeadId === lead.id && (
+                          <TableRow key={`${lead.id}-detail`}>
+                            <TableCell colSpan={10} className="bg-muted/30 p-0">
+                              <div className="p-5 space-y-5">
+                                {/* Action bar */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Button size="sm" variant="outline" onClick={() => startEditingLead(lead)}>
+                                    <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Lead
+                                  </Button>
+                                  {lead.call_recording_url && (
+                                    <>
+                                      <Button size="sm" variant="outline" onClick={() => toggleLeadPlayback(lead.call_recording_url!)}>
+                                        {isPlaying ? <><Pause className="h-3.5 w-3.5 mr-1.5" /> Pause</> : <><Play className="h-3.5 w-3.5 mr-1.5" /> Play Recording</>}
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => downloadRecording(lead)}>
+                                        <Download className="h-3.5 w-3.5 mr-1.5" /> Download
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* Inline Edit Form */}
+                                {editingLead && (
+                                  <Card className="border-primary/20">
+                                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Business Name</Label>
+                                        <Input value={editingLead.business_name || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, business_name: e.target.value }))} />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Phone</Label>
+                                        <Input value={editingLead.phone || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, phone: e.target.value }))} />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Email</Label>
+                                        <Input value={editingLead.email || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, email: e.target.value }))} />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Decision Maker</Label>
+                                        <Input value={editingLead.decision_maker_name || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, decision_maker_name: e.target.value }))} />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Title</Label>
+                                        <Input value={editingLead.decision_maker_title || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, decision_maker_title: e.target.value }))} />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Status</Label>
+                                        <Select value={editingLead.campaign_status || 'new'} onValueChange={(v) => setEditingLead(prev => ({ ...prev, campaign_status: v }))}>
+                                          <SelectTrigger><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                            {ALL_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, ' ')}</SelectItem>)}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="space-y-1 md:col-span-3">
+                                        <Label className="text-xs">Notes</Label>
+                                        <Textarea value={editingLead.notes || ''} onChange={(e) => setEditingLead(prev => ({ ...prev, notes: e.target.value }))} rows={2} />
+                                      </div>
+                                      <div className="md:col-span-3 flex gap-2">
+                                        <Button size="sm" onClick={() => saveLeadEdit(lead.id)} disabled={isSavingEdit}>
+                                          {isSavingEdit ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />} Save
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditingLead(null)}>Cancel</Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )}
+
+                                {/* Lead Details Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Contact Info</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                      {lead.decision_maker_name && <p>Decision Maker: {lead.decision_maker_name}{lead.decision_maker_title ? ` (${lead.decision_maker_title})` : ''}</p>}
+                                      {lead.phone && <p>Phone: {lead.phone}</p>}
+                                      {lead.email && <p>Email: {lead.email}</p>}
+                                      {lead.address && <p>Address: {lead.address}</p>}
+                                      {lead.website && <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">Website <ExternalLink className="h-3 w-3" /></a>}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Call History</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                      <p>Status: {lead.campaign_status.replace(/_/g, ' ')}</p>
+                                      <p>Drip Step: {lead.drip_step}/5</p>
+                                      {lead.last_call_at && <p>Last Call: {new Date(lead.last_call_at).toLocaleString()}</p>}
+                                      {lead.call_outcome && <p>Outcome: {lead.call_outcome}</p>}
+                                      {lead.call_sid && <p className="font-mono text-xs">Call SID: {lead.call_sid}</p>}
+                                      {lead.last_email_sent_at && <p>Last Email: {new Date(lead.last_email_sent_at).toLocaleString()}</p>}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Recording */}
+                                {lead.call_recording_url && (
+                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2"><Play className="h-4 w-4" /> Call Recording</h4>
+                                    <div className="flex items-center gap-3">
+                                      <Button size="sm" variant="outline" onClick={() => toggleLeadPlayback(lead.call_recording_url!)}>
+                                        {isPlaying ? <><Pause className="h-4 w-4 mr-2" /> Pause</> : <><Play className="h-4 w-4 mr-2" /> Play</>}
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => downloadRecording(lead)} className="text-sm text-primary">
+                                        <Download className="h-4 w-4 mr-2" /> Download MP3
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Transcript */}
+                                {lead.call_transcript && (
+                                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Call Transcript</h4>
+                                    <ScrollArea className="max-h-[250px]">
+                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{lead.call_transcript}</p>
+                                    </ScrollArea>
+                                  </div>
+                                )}
+
+                                {/* Notes */}
+                                {lead.notes && !editingLead && (
+                                  <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+                                    <h4 className="text-sm font-semibold">Notes</h4>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{lead.notes}</p>
+                                  </div>
+                                )}
+
+                                {/* No call data */}
+                                {!lead.call_recording_url && !lead.call_transcript && !lead.last_call_at && (
+                                  <div className="bg-muted/30 rounded-lg p-4 text-center text-muted-foreground">
+                                    <Phone className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                                    <p className="text-sm">No call data available for this lead yet.</p>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        </React.Fragment>
                       ))}
                     </TableBody>
                   </Table>
