@@ -477,6 +477,57 @@ export type Database = {
           },
         ]
       }
+      gold_library: {
+        Row: {
+          call_id: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          lead_id: string | null
+          month: string
+          notes: string | null
+          outcome: string | null
+          tags: string[] | null
+        }
+        Insert: {
+          call_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          month: string
+          notes?: string | null
+          outcome?: string | null
+          tags?: string[] | null
+        }
+        Update: {
+          call_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          lead_id?: string | null
+          month?: string
+          notes?: string | null
+          outcome?: string | null
+          tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gold_library_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "call_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gold_library_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelisys_threads: {
         Row: {
           admin_email: string | null
@@ -557,6 +608,48 @@ export type Database = {
           },
         ]
       }
+      lead_source_allocations: {
+        Row: {
+          conversion_rate: number | null
+          cost_per_order: number | null
+          created_at: string
+          current_pct: number
+          id: string
+          max_pct: number
+          min_pct: number
+          source_name: string
+          total_leads: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          conversion_rate?: number | null
+          cost_per_order?: number | null
+          created_at?: string
+          current_pct?: number
+          id?: string
+          max_pct?: number
+          min_pct?: number
+          source_name: string
+          total_leads?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          conversion_rate?: number | null
+          cost_per_order?: number | null
+          created_at?: string
+          current_pct?: number
+          id?: string
+          max_pct?: number
+          min_pct?: number
+          source_name?: string
+          total_leads?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_status_history: {
         Row: {
           changed_at: string
@@ -584,6 +677,138 @@ export type Database = {
           lead_type?: string
           new_status?: string
           old_status?: string | null
+        }
+        Relationships: []
+      }
+      opener_weights: {
+        Row: {
+          close_rate: number | null
+          created_at: string
+          discovery_completion_rate: number | null
+          engagement_rate: number | null
+          id: string
+          is_paused: boolean
+          total_answered: number
+          total_calls: number
+          updated_at: string
+          variant: string
+          weight: number
+        }
+        Insert: {
+          close_rate?: number | null
+          created_at?: string
+          discovery_completion_rate?: number | null
+          engagement_rate?: number | null
+          id?: string
+          is_paused?: boolean
+          total_answered?: number
+          total_calls?: number
+          updated_at?: string
+          variant: string
+          weight?: number
+        }
+        Update: {
+          close_rate?: number | null
+          created_at?: string
+          discovery_completion_rate?: number | null
+          engagement_rate?: number | null
+          id?: string
+          is_paused?: boolean
+          total_answered?: number
+          total_calls?: number
+          updated_at?: string
+          variant?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      optimization_changelog: {
+        Row: {
+          after_json: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          before_json: Json | null
+          change_category: string
+          change_type: string
+          created_at: string
+          id: string
+          metrics_snapshot: Json | null
+          reason: string | null
+          rolled_back_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          after_json?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          before_json?: Json | null
+          change_category?: string
+          change_type: string
+          created_at?: string
+          id?: string
+          metrics_snapshot?: Json | null
+          reason?: string | null
+          rolled_back_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          after_json?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          before_json?: Json | null
+          change_category?: string
+          change_type?: string
+          created_at?: string
+          id?: string
+          metrics_snapshot?: Json | null
+          reason?: string | null
+          rolled_back_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      orchestrator_reports: {
+        Row: {
+          audit_results: Json | null
+          auto_applied: Json | null
+          bottleneck: string | null
+          created_at: string
+          experiments: Json | null
+          id: string
+          metrics: Json
+          needs_approval: Json | null
+          recommendations: Json | null
+          report_date: string
+          report_type: string
+        }
+        Insert: {
+          audit_results?: Json | null
+          auto_applied?: Json | null
+          bottleneck?: string | null
+          created_at?: string
+          experiments?: Json | null
+          id?: string
+          metrics?: Json
+          needs_approval?: Json | null
+          recommendations?: Json | null
+          report_date: string
+          report_type: string
+        }
+        Update: {
+          audit_results?: Json | null
+          auto_applied?: Json | null
+          bottleneck?: string | null
+          created_at?: string
+          experiments?: Json | null
+          id?: string
+          metrics?: Json
+          needs_approval?: Json | null
+          recommendations?: Json | null
+          report_date?: string
+          report_type?: string
         }
         Relationships: []
       }
@@ -897,6 +1122,69 @@ export type Database = {
           zip_codes_extracted?: string[] | null
         }
         Relationships: []
+      }
+      transcript_insights: {
+        Row: {
+          call_id: string | null
+          created_at: string
+          failing_phrases: string[] | null
+          hangup_category: string | null
+          id: string
+          last_agent_sentence: string | null
+          last_prospect_sentence: string | null
+          lead_id: string | null
+          notes: string | null
+          objection_detected: string[] | null
+          sentiment_shift: string | null
+          trigger_line: string | null
+          winning_phrases: string[] | null
+        }
+        Insert: {
+          call_id?: string | null
+          created_at?: string
+          failing_phrases?: string[] | null
+          hangup_category?: string | null
+          id?: string
+          last_agent_sentence?: string | null
+          last_prospect_sentence?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          objection_detected?: string[] | null
+          sentiment_shift?: string | null
+          trigger_line?: string | null
+          winning_phrases?: string[] | null
+        }
+        Update: {
+          call_id?: string | null
+          created_at?: string
+          failing_phrases?: string[] | null
+          hangup_category?: string | null
+          id?: string
+          last_agent_sentence?: string | null
+          last_prospect_sentence?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          objection_detected?: string[] | null
+          sentiment_shift?: string | null
+          trigger_line?: string | null
+          winning_phrases?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcript_insights_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "call_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcript_insights_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
