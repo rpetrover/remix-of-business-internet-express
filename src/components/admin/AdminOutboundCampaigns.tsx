@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Phone, Mail, Loader2, MapPin, Building2, RefreshCw, Play, Trash2 } from 'lucide-react';
+import { Search, Phone, Mail, Loader2, MapPin, Building2, RefreshCw, Play, Trash2, Newspaper, Flame, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,6 +26,16 @@ interface OutboundLead {
   last_call_at: string | null;
   call_outcome: string | null;
   created_at: string;
+  is_fiber_launch_area?: boolean;
+  fiber_launch_source?: string | null;
+}
+
+interface NewsroomScanResult {
+  url: string;
+  title: string;
+  date: string;
+  locations: { county: string; state: string; stateAbbr: string }[];
+  zipCodes: string[];
 }
 
 const statusColors: Record<string, string> = {
@@ -43,6 +53,8 @@ const AdminOutboundCampaigns = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isSendingDrip, setIsSendingDrip] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanResults, setScanResults] = useState<NewsroomScanResult[] | null>(null);
   const [zipInput, setZipInput] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [callingLeadId, setCallingLeadId] = useState<string | null>(null);
@@ -53,6 +65,7 @@ const AdminOutboundCampaigns = () => {
     const { data, error } = await supabase
       .from('outbound_leads')
       .select('*')
+      .order('is_fiber_launch_area', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(200);
 
@@ -67,6 +80,38 @@ const AdminOutboundCampaigns = () => {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  const handleScanNewsroom = async () => {
+    setIsScanning(true);
+    setScanResults(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-spectrum-newsroom', {
+        body: {},
+      });
+
+      if (error) throw error;
+
+      setScanResults(data.articles || []);
+      
+      // If ZIPs were found, auto-populate the ZIP input for discovery
+      const allZips = (data.articles || []).flatMap((a: NewsroomScanResult) => a.zipCodes);
+      if (allZips.length > 0) {
+        const uniqueZips = [...new Set(allZips)];
+        setZipInput(uniqueZips.join(', '));
+      }
+
+      toast({
+        title: '🔥 Newsroom Scan Complete',
+        description: `Found ${data.articlesFound} articles, scanned ${data.newArticlesScanned} new ones. ${data.totalZipCodesFound} ZIP codes identified.`,
+      });
+
+      fetchLeads();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Scan Failed', description: err.message });
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const handleDiscoverLeads = async () => {
     const zips = zipInput
@@ -89,7 +134,7 @@ const AdminOutboundCampaigns = () => {
 
       toast({
         title: 'Discovery Complete',
-        description: `Found ${data.totalFound} businesses, added ${data.totalInserted} new leads from ${data.spectrumZipsSearched} Spectrum ZIPs.`,
+        description: `Found ${data.totalFound} businesses, added ${data.totalInserted} new leads. ${data.totalEmailsFound || 0} emails found.`,
       });
       fetchLeads();
     } catch (err: any) {
@@ -123,12 +168,6 @@ const AdminOutboundCampaigns = () => {
   const handleCallLead = async (leadId: string) => {
     setCallingLeadId(leadId);
     try {
-      const { data, error } = await supabase.functions.invoke('outbound-sales-call', {
-        body: {},
-        headers: {},
-      });
-
-      // Use fetch directly since we need query params
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/outbound-sales-call?action=call&lead_id=${leadId}`,
         {
@@ -169,14 +208,16 @@ const AdminOutboundCampaigns = () => {
     emailed: leads.filter((l) => l.campaign_status === 'email_sent').length,
     called: leads.filter((l) => l.campaign_status === 'called').length,
     converted: leads.filter((l) => l.campaign_status === 'converted').length,
+    fiberLaunch: leads.filter((l) => l.is_fiber_launch_area).length,
   };
 
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {[
           { label: 'Total Leads', value: stats.total, color: 'text-foreground' },
+          { label: '🔥 Fiber Launch', value: stats.fiberLaunch, color: 'text-orange-600' },
           { label: 'New', value: stats.new, color: 'text-blue-600' },
           { label: 'Emailed', value: stats.emailed, color: 'text-yellow-600' },
           { label: 'Called', value: stats.called, color: 'text-purple-600' },
@@ -191,11 +232,89 @@ const AdminOutboundCampaigns = () => {
         ))}
       </div>
 
-      <Tabs defaultValue="discover">
+      <Tabs defaultValue="newsroom">
         <TabsList>
+          <TabsTrigger value="newsroom" className="gap-1">
+            <Newspaper className="h-3.5 w-3.5" /> Newsroom Scanner
+          </TabsTrigger>
           <TabsTrigger value="discover">Discover Leads</TabsTrigger>
           <TabsTrigger value="leads">Manage Leads ({leads.length})</TabsTrigger>
         </TabsList>
+
+        {/* Newsroom Scanner Tab */}
+        <TabsContent value="newsroom" className="space-y-4">
+          <Card className="border-orange-200 bg-orange-50/30 dark:bg-orange-950/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Flame className="h-5 w-5" /> Spectrum Newsroom Fiber Launch Scanner
+              </CardTitle>
+              <CardDescription>
+                Automatically scan Charter's newsroom for new fiber expansion announcements. 
+                Discovered areas get <strong>priority targeting</strong> — ZIP codes are auto-populated for lead discovery.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={handleScanNewsroom} 
+                disabled={isScanning}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {isScanning ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Newspaper className="h-4 w-4 mr-2" />
+                )}
+                {isScanning ? 'Scanning Newsroom...' : 'Scan for New Fiber Launches'}
+              </Button>
+
+              {scanResults && scanResults.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">Recent Fiber Expansion Articles Found:</h4>
+                  {scanResults.map((article, i) => (
+                    <Card key={i} className="p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <a 
+                            href={article.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {article.title} <ExternalLink className="h-3 w-3" />
+                          </a>
+                          {article.date && (
+                            <p className="text-xs text-muted-foreground">{article.date}</p>
+                          )}
+                          {article.locations.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {article.locations.map((loc, j) => (
+                                <Badge key={j} variant="outline" className="text-xs bg-orange-100 border-orange-300">
+                                  <MapPin className="h-2.5 w-2.5 mr-1" />
+                                  {loc.county}, {loc.stateAbbr}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          {article.zipCodes.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              ZIP codes: {article.zipCodes.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {scanResults && scanResults.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No new articles found. All known articles have been scanned already.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Discover Tab */}
         <TabsContent value="discover" className="space-y-4">
@@ -206,6 +325,7 @@ const AdminOutboundCampaigns = () => {
               </CardTitle>
               <CardDescription>
                 Enter ZIP codes to find businesses using Google Places. Only Spectrum-serviceable ZIPs will be searched.
+                {zipInput && <span className="text-orange-600 font-medium"> ZIPs auto-filled from newsroom scan!</span>}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -276,10 +396,22 @@ const AdminOutboundCampaigns = () => {
                     </TableHeader>
                     <TableBody>
                       {leads.map((lead) => (
-                        <TableRow key={lead.id}>
+                        <TableRow key={lead.id} className={lead.is_fiber_launch_area ? 'bg-orange-50/50 dark:bg-orange-950/10' : ''}>
                           <TableCell>
                             <div>
-                              <p className="font-medium text-sm">{lead.business_name}</p>
+                              <div className="flex items-center gap-1.5">
+                                {lead.is_fiber_launch_area && (
+                                  <span title="Fiber launch area — priority target">
+                                    <Flame className="h-3.5 w-3.5 text-orange-500 flex-shrink-0" />
+                                  </span>
+                                )}
+                                <p className="font-medium text-sm">{lead.business_name}</p>
+                              </div>
+                              {lead.is_fiber_launch_area && lead.fiber_launch_source && (
+                                <p className="text-[10px] text-orange-600 mt-0.5 truncate max-w-[200px]" title={lead.fiber_launch_source}>
+                                  🔥 {lead.fiber_launch_source}
+                                </p>
+                              )}
                               {lead.website && (
                                 <a
                                   href={lead.website}
