@@ -764,6 +764,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           notes: string | null
+          objections_triggered: string[] | null
           opening_variant: string | null
           phone: string | null
           state: string | null
@@ -800,6 +801,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          objections_triggered?: string[] | null
           opening_variant?: string | null
           phone?: string | null
           state?: string | null
@@ -836,6 +838,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          objections_triggered?: string[] | null
           opening_variant?: string | null
           phone?: string | null
           state?: string | null
