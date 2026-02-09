@@ -6,6 +6,7 @@ export const useAdminAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const confirmedAdminUserId = useRef<string | null>(null);
+  const checkInProgress = useRef(false);
 
   const checkAdminRole = useCallback(async (currentUser: any) => {
     if (!currentUser) {
@@ -25,45 +26,75 @@ export const useAdminAuth = () => {
       return;
     }
 
-    try {
-      const { data, error } = await supabase.rpc('has_role', {
-        _user_id: currentUser.id,
-        _role: 'admin'
-      });
+    // Prevent concurrent checks
+    if (checkInProgress.current) return;
+    checkInProgress.current = true;
 
-      if (error) {
-        console.error('Error checking admin role:', error);
-        // On token refresh errors, keep existing admin state if we had it
+    try {
+      // Retry up to 2 times on transient errors
+      let lastError: any = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: currentUser.id,
+          _role: 'admin'
+        });
+
+        if (!error) {
+          const adminResult = data === true;
+          setIsAdmin(adminResult);
+          if (adminResult) {
+            confirmedAdminUserId.current = currentUser.id;
+          } else {
+            confirmedAdminUserId.current = null;
+          }
+          lastError = null;
+          break;
+        }
+        
+        lastError = error;
+        console.warn(`Admin check attempt ${attempt + 1} failed:`, error.message);
+        // Brief delay before retry
+        if (attempt < 1) await new Promise(r => setTimeout(r, 500));
+      }
+
+      if (lastError) {
+        console.error('Error checking admin role after retries:', lastError);
+        // Preserve existing admin status on transient errors
         if (confirmedAdminUserId.current === currentUser.id) {
           setIsAdmin(true);
         } else {
           setIsAdmin(false);
         }
-      } else {
-        const adminResult = data === true;
-        setIsAdmin(adminResult);
-        if (adminResult) {
-          confirmedAdminUserId.current = currentUser.id;
-        } else {
-          confirmedAdminUserId.current = null;
-        }
       }
     } catch (err) {
       console.error('Admin auth check failed:', err);
-      // Preserve existing admin status on transient errors
-      if (confirmedAdminUserId.current !== currentUser.id) {
+      if (confirmedAdminUserId.current === currentUser.id) {
+        setIsAdmin(true);
+      } else {
         setIsAdmin(false);
       }
     } finally {
+      checkInProgress.current = false;
       setIsLoading(false);
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAdmin(false);
     confirmedAdminUserId.current = null;
+    setIsAdmin(false);
+    setUser(null);
+    
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
+    
+    // Clear any stale tokens
+    const keysToRemove = Object.keys(localStorage).filter(
+      (key) => key.startsWith('sb-') || key.startsWith('supabase')
+    );
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   }, []);
 
   useEffect(() => {

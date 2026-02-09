@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Megaphone, Bot, Phone, Package, UserCheck, BarChart3, Loader2, ShieldAlert, Settings, PhoneCall, LogOut, Radar, Brain } from 'lucide-react';
 import AdminEmailInbox from '@/components/admin/AdminEmailInbox';
 import AdminEmailCompose from '@/components/admin/AdminEmailCompose';
@@ -19,6 +19,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const { isAdmin, isLoading, user, signOut } = useAdminAuth();
+  const navigate = useNavigate();
 
   // Loading state while checking auth
   if (isLoading) {
@@ -51,7 +52,7 @@ const Admin = () => {
             <button
               onClick={async () => {
                 await signOut();
-                window.location.href = '/auth?returnTo=/admin';
+                navigate('/auth?returnTo=/admin', { replace: true });
               }}
               className="inline-flex items-center gap-2 text-sm font-medium text-destructive hover:underline"
             >
