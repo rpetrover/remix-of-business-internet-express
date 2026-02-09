@@ -46,6 +46,141 @@ function isSpectrumZip(zip: string): boolean {
   return SPECTRUM_ZIP_PREFIXES.includes(zip.substring(0, 3));
 }
 
+// Extract emails from scraped website content, prioritizing owner/CEO/manager
+async function scrapeEmailFromWebsite(websiteUrl: string, firecrawlApiKey: string): Promise<string | null> {
+  try {
+    // First try scraping the main page and contact/about pages
+    const pagesToTry = [websiteUrl];
+    
+    // Try to discover contact/about pages via map
+    try {
+      const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${firecrawlApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: websiteUrl,
+          search: "contact about team",
+          limit: 10,
+          includeSubdomains: false,
+        }),
+      });
+      const mapData = await mapRes.json();
+      const links: string[] = mapData?.links || mapData?.data?.links || [];
+      
+      // Add contact/about/team pages to scrape list
+      const priorityPages = links.filter((link: string) => {
+        const lower = link.toLowerCase();
+        return lower.includes("contact") || lower.includes("about") || 
+               lower.includes("team") || lower.includes("staff") || 
+               lower.includes("leadership") || lower.includes("management");
+      });
+      pagesToTry.push(...priorityPages.slice(0, 3));
+    } catch (e) {
+      console.log("Map failed, will just scrape main page:", e);
+    }
+
+    const allEmails: { email: string; priority: number }[] = [];
+
+    for (const pageUrl of pagesToTry) {
+      try {
+        const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${firecrawlApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: pageUrl,
+            formats: ["markdown"],
+            onlyMainContent: false,
+          }),
+        });
+
+        const scrapeData = await scrapeRes.json();
+        const content = scrapeData?.data?.markdown || scrapeData?.markdown || "";
+
+        if (!content) continue;
+
+        // Extract all email addresses from content
+        const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+        const foundEmails = content.match(emailRegex) || [];
+
+        for (const email of foundEmails) {
+          const lower = email.toLowerCase();
+          
+          // Skip generic/system emails
+          if (lower.includes("noreply") || lower.includes("no-reply") || 
+              lower.includes("unsubscribe") || lower.includes("mailer-daemon") ||
+              lower.includes("postmaster") || lower.includes("example.com") ||
+              lower.includes("sentry.io") || lower.includes("wordpress") ||
+              lower.includes("wixpress") || lower.includes("squarespace")) {
+            continue;
+          }
+
+          // Assign priority (lower = better)
+          let priority = 50; // default
+          
+          // Check surrounding context for role indicators
+          const emailIndex = content.toLowerCase().indexOf(lower);
+          const context = content.substring(Math.max(0, emailIndex - 200), emailIndex + 200).toLowerCase();
+
+          if (context.includes("owner") || context.includes("founder") || context.includes("ceo") || 
+              context.includes("president") || context.includes("principal")) {
+            priority = 1;
+          } else if (context.includes("manager") || context.includes("director") || 
+                     context.includes("vp") || context.includes("vice president")) {
+            priority = 5;
+          } else if (context.includes("general manager") || context.includes("gm")) {
+            priority = 3;
+          } else if (lower.startsWith("info@") || lower.startsWith("contact@") || lower.startsWith("hello@")) {
+            priority = 20;
+          } else if (lower.startsWith("support@") || lower.startsWith("help@") || lower.startsWith("service@")) {
+            priority = 30;
+          } else if (lower.startsWith("sales@")) {
+            priority = 15;
+          } else {
+            // Personal email (likely name-based) gets decent priority
+            const localPart = lower.split("@")[0];
+            if (localPart.includes(".") || localPart.length > 3) {
+              priority = 10; // Likely a personal name email
+            }
+          }
+
+          allEmails.push({ email, priority });
+        }
+
+        // Small delay between page scrapes
+        await new Promise((r) => setTimeout(r, 300));
+      } catch (e) {
+        console.log(`Failed to scrape ${pageUrl}:`, e);
+      }
+    }
+
+    if (allEmails.length === 0) return null;
+
+    // Sort by priority and return the best one
+    allEmails.sort((a, b) => a.priority - b.priority);
+    
+    // Deduplicate
+    const seen = new Set<string>();
+    const unique = allEmails.filter((e) => {
+      const lower = e.email.toLowerCase();
+      if (seen.has(lower)) return false;
+      seen.add(lower);
+      return true;
+    });
+
+    console.log(`Found ${unique.length} emails, best: ${unique[0].email} (priority ${unique[0].priority})`);
+    return unique[0].email;
+  } catch (error) {
+    console.error(`Email scrape error for ${websiteUrl}:`, error);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,6 +191,8 @@ Deno.serve(async (req) => {
     if (!GOOGLE_MAPS_API_KEY) {
       throw new Error("Google Maps API key not configured");
     }
+
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -82,6 +219,7 @@ Deno.serve(async (req) => {
     const query = businessType || "business";
     let totalFound = 0;
     let totalInserted = 0;
+    let totalEmailsFound = 0;
     const errors: string[] = [];
 
     for (const zip of spectrumZips) {
@@ -116,6 +254,19 @@ Deno.serve(async (req) => {
             console.error(`Failed to get details for ${place.name}:`, e);
           }
 
+          // Scrape website for email address using Firecrawl
+          let email: string | null = null;
+          if (website && FIRECRAWL_API_KEY) {
+            console.log(`Scraping ${website} for email (${place.name})...`);
+            email = await scrapeEmailFromWebsite(website, FIRECRAWL_API_KEY);
+            if (email) {
+              totalEmailsFound++;
+              console.log(`✅ Found email for ${place.name}: ${email}`);
+            } else {
+              console.log(`❌ No email found for ${place.name}`);
+            }
+          }
+
           // Extract address components
           const address = place.formatted_address || "";
           const addressParts = address.split(",").map((p: string) => p.trim());
@@ -136,6 +287,7 @@ Deno.serve(async (req) => {
                 state: state,
                 zip: extractedZip,
                 phone: phone,
+                email: email,
                 website: website,
                 google_place_id: place.place_id,
                 business_type: query,
@@ -151,7 +303,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Rate limit: small delay between ZIP searches
+        // Rate limit: delay between ZIP searches
         await new Promise((r) => setTimeout(r, 200));
       } catch (err) {
         console.error(`Error processing ZIP ${zip}:`, err);
@@ -176,6 +328,7 @@ Deno.serve(async (req) => {
         spectrumZipsSearched: spectrumZips.length,
         totalFound,
         totalInserted,
+        totalEmailsFound,
         errors: errors.length > 0 ? errors : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
