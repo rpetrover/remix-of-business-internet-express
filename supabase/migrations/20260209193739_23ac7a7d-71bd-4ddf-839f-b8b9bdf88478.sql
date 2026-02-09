@@ -1,0 +1,1 @@
+ALTER TABLE public.outbound_leads ADD COLUMN IF NOT EXISTS opening_variant text;
