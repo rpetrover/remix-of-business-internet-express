@@ -12,7 +12,7 @@ const VideoSplashBanner = () => {
     {
       id: 'speed',
       title: 'Blazing Fast Internet',
-      subtitle: 'Speeds up to 1 Gbps for your business',
+      subtitle: 'Speeds up to 30 Gbps for your business',
       icon: <Zap className="h-16 w-16" />,
       description: 'Power your entire team with enterprise-grade speeds',
     },
