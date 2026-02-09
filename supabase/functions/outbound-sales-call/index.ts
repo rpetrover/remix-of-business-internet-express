@@ -190,6 +190,17 @@ Deno.serve(async (req) => {
         })
         .eq("id", leadId);
 
+      // Log call record with conversation_id for later transcript/recording fetch
+      await supabase.from("call_records").insert({
+        direction: "outbound",
+        callee_phone: phoneNumber,
+        customer_name: lead.business_name,
+        customer_email: lead.email,
+        status: "initiated",
+        call_sid: elData.callSid || null,
+        conversation_id: elData.conversation_id || null,
+      });
+
       return new Response(
         JSON.stringify({
           success: true,

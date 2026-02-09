@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.setup-sales-agent]
 verify_jwt = false
+
+[functions.fetch-call-details]
+verify_jwt = false

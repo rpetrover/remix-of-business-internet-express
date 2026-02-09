@@ -166,6 +166,7 @@ Deno.serve(async (req) => {
           customer_email: lead.email,
           status: "initiated",
           call_sid: elData.callSid || null,
+          conversation_id: elData.conversation_id || null,
         });
 
         called++;
