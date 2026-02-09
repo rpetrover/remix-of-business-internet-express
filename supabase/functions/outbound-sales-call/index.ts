@@ -148,6 +148,11 @@ Deno.serve(async (req) => {
 
       const phoneNumber = formatPhoneNumber(lead.phone);
 
+      // Randomly select opening variant A–E
+      const variants = ["A", "B", "C", "D", "E"];
+      const openingVariant = variants[Math.floor(Math.random() * variants.length)];
+      console.log(`Selected opening variant: ${openingVariant} for lead ${leadId}`);
+
       // Use ElevenLabs native Twilio outbound call API
       const elResponse = await fetch(
         "https://api.elevenlabs.io/v1/convai/twilio/outbound-call",
@@ -167,6 +172,7 @@ Deno.serve(async (req) => {
                 business_name: lead.business_name,
                 city: lead.city || "your area",
                 state: lead.state || "",
+                opening_variant: openingVariant,
               },
             },
           }),
@@ -180,13 +186,14 @@ Deno.serve(async (req) => {
         throw new Error(`ElevenLabs error: ${elData.message || JSON.stringify(elData)}`);
       }
 
-      // Update lead status
+      // Update lead status + log opening variant
       await supabase
         .from("outbound_leads")
         .update({
           campaign_status: "called",
           last_call_at: new Date().toISOString(),
           call_sid: elData.callSid || null,
+          opening_variant: openingVariant,
         })
         .eq("id", leadId);
 
