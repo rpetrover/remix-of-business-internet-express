@@ -151,6 +151,7 @@ export type Database = {
           call_sid: string | null
           callee_phone: string | null
           caller_phone: string | null
+          conversation_id: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -169,6 +170,7 @@ export type Database = {
           call_sid?: string | null
           callee_phone?: string | null
           caller_phone?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           call_sid?: string | null
           callee_phone?: string | null
           caller_phone?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null

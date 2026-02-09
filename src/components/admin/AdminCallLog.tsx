@@ -16,6 +16,8 @@ import {
   Clock,
   ChevronRight,
   User,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 interface CallRecord {
@@ -34,6 +36,7 @@ interface CallRecord {
   related_order_id: string | null;
   related_checkout_id: string | null;
   created_at: string;
+  conversation_id?: string | null;
 }
 
 const AdminCallLog = () => {
@@ -41,6 +44,7 @@ const AdminCallLog = () => {
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
@@ -64,6 +68,42 @@ const AdminCallLog = () => {
     fetchCalls();
   }, []);
 
+  const fetchCallDetails = async (call: CallRecord) => {
+    if (!call.conversation_id) {
+      toast({ title: "No conversation ID", description: "This call doesn't have an ElevenLabs conversation ID to fetch details from.", variant: "destructive" });
+      return;
+    }
+
+    setIsFetchingDetails(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fetch-call-details", {
+        body: { call_record_id: call.id, conversation_id: call.conversation_id },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({ title: "Details fetched", description: `Transcript: ${data.has_transcript ? "✓" : "—"} | Summary: ${data.has_summary ? "✓" : "—"} | Audio: ${data.has_audio ? "✓" : "—"}` });
+        // Refresh the call list and re-select
+        await fetchCalls();
+        // Re-select the updated call
+        const { data: updated } = await supabase
+          .from("call_records")
+          .select("*")
+          .eq("id", call.id)
+          .maybeSingle();
+        if (updated) setSelectedCall(updated as unknown as CallRecord);
+      } else {
+        toast({ title: "Error", description: data?.error || "Failed to fetch details", variant: "destructive" });
+      }
+    } catch (e) {
+      console.error("Fetch details error:", e);
+      toast({ title: "Error", description: "Failed to fetch call details", variant: "destructive" });
+    } finally {
+      setIsFetchingDetails(false);
+    }
+  };
+
   const togglePlayback = () => {
     if (!selectedCall?.recording_url) return;
 
@@ -76,16 +116,22 @@ const AdminCallLog = () => {
         setIsPlaying(true);
       }
     } else {
-      const audio = new Audio(selectedCall.recording_url);
+      // For ElevenLabs audio URLs, we need to proxy through our edge function
+      // For direct URLs (Twilio), play directly
+      const audioUrl = selectedCall.recording_url;
+      const audio = new Audio(audioUrl);
       audioRef.current = audio;
       audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => {
+        setIsPlaying(false);
+        toast({ title: "Playback error", description: "Could not play this recording. It may still be processing.", variant: "destructive" });
+      };
       audio.play();
       setIsPlaying(true);
     }
   };
 
   const handleSelectCall = (call: CallRecord) => {
-    // Stop any current playback
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -104,6 +150,8 @@ const AdminCallLog = () => {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
       completed: "bg-emerald-500/10 text-emerald-600",
+      initiated: "bg-blue-500/10 text-blue-600",
+      processing: "bg-amber-500/10 text-amber-600",
       no_answer: "bg-amber-500/10 text-amber-600",
       busy: "bg-amber-500/10 text-amber-600",
       failed: "bg-destructive/10 text-destructive",
@@ -119,7 +167,6 @@ const AdminCallLog = () => {
       <PhoneOutgoing className="h-4 w-4 text-emerald-500" />
     );
 
-  // Stats
   const totalCalls = calls.length;
   const inboundCalls = calls.filter((c) => c.direction === "inbound").length;
   const outboundCalls = calls.filter((c) => c.direction === "outbound").length;
@@ -213,6 +260,11 @@ const AdminCallLog = () => {
                                 Transcript
                               </Badge>
                             )}
+                            {call.summary && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/5">
+                                Summary
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(call.created_at).toLocaleDateString()}{" "}
@@ -247,7 +299,27 @@ const AdminCallLog = () => {
                       </p>
                     </div>
                   </div>
-                  {getStatusBadge(selectedCall.status)}
+                  <div className="flex items-center gap-2">
+                    {selectedCall.conversation_id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fetchCallDetails(selectedCall)}
+                        disabled={isFetchingDetails}
+                      >
+                        {isFetchingDetails ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Fetching...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" /> Fetch Details
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {getStatusBadge(selectedCall.status)}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -273,6 +345,9 @@ const AdminCallLog = () => {
                       <p>Status: {selectedCall.status}</p>
                       {selectedCall.call_sid && (
                         <p className="font-mono text-xs">SID: {selectedCall.call_sid}</p>
+                      )}
+                      {selectedCall.conversation_id && (
+                        <p className="font-mono text-xs">Conv: {selectedCall.conversation_id}</p>
                       )}
                     </div>
                   </div>
@@ -311,7 +386,7 @@ const AdminCallLog = () => {
                 {/* Summary */}
                 {selectedCall.summary && (
                   <div className="bg-primary/5 rounded-lg p-4 space-y-2">
-                    <h4 className="text-sm font-semibold">AI Summary</h4>
+                    <h4 className="text-sm font-semibold">AI Call Summary</h4>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {selectedCall.summary}
                     </p>
@@ -332,11 +407,18 @@ const AdminCallLog = () => {
                   </div>
                 )}
 
-                {/* No recording or transcript */}
+                {/* No data yet - offer to fetch */}
                 {!selectedCall.recording_url && !selectedCall.transcript && !selectedCall.summary && (
                   <div className="bg-muted/30 rounded-lg p-6 text-center text-muted-foreground">
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No recording or transcript available for this call.</p>
+                    {selectedCall.conversation_id ? (
+                      <>
+                        <p className="text-sm">No recording or transcript loaded yet.</p>
+                        <p className="text-xs mt-1">Click "Fetch Details" above to pull the transcript, summary, and recording from ElevenLabs.</p>
+                      </>
+                    ) : (
+                      <p className="text-sm">No recording or transcript available for this call.</p>
+                    )}
                   </div>
                 )}
               </CardContent>
