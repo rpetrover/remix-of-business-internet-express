@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.outbound-sales-call]
 verify_jwt = false
+
+[functions.scan-spectrum-newsroom]
+verify_jwt = false

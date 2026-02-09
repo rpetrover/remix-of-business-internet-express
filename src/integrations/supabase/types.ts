@@ -747,8 +747,10 @@ export type Database = {
           discovery_batch: string | null
           drip_step: number
           email: string | null
+          fiber_launch_source: string | null
           google_place_id: string | null
           id: string
+          is_fiber_launch_area: boolean | null
           last_call_at: string | null
           last_email_sent_at: string | null
           latitude: number | null
@@ -775,8 +777,10 @@ export type Database = {
           discovery_batch?: string | null
           drip_step?: number
           email?: string | null
+          fiber_launch_source?: string | null
           google_place_id?: string | null
           id?: string
+          is_fiber_launch_area?: boolean | null
           last_call_at?: string | null
           last_email_sent_at?: string | null
           latitude?: number | null
@@ -803,8 +807,10 @@ export type Database = {
           discovery_batch?: string | null
           drip_step?: number
           email?: string | null
+          fiber_launch_source?: string | null
           google_place_id?: string | null
           id?: string
+          is_fiber_launch_area?: boolean | null
           last_call_at?: string | null
           last_email_sent_at?: string | null
           latitude?: number | null
@@ -825,6 +831,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      spectrum_newsroom_scans: {
+        Row: {
+          article_title: string | null
+          article_url: string
+          id: string
+          leads_discovered: number | null
+          locations_found: Json | null
+          publish_date: string | null
+          scanned_at: string
+          zip_codes_extracted: string[] | null
+        }
+        Insert: {
+          article_title?: string | null
+          article_url: string
+          id?: string
+          leads_discovered?: number | null
+          locations_found?: Json | null
+          publish_date?: string | null
+          scanned_at?: string
+          zip_codes_extracted?: string[] | null
+        }
+        Update: {
+          article_title?: string | null
+          article_url?: string
+          id?: string
+          leads_discovered?: number | null
+          locations_found?: Json | null
+          publish_date?: string | null
+          scanned_at?: string
+          zip_codes_extracted?: string[] | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
