@@ -74,3 +74,9 @@ verify_jwt = false
 
 [functions.continuous-discovery]
 verify_jwt = false
+
+[functions.submit-phone-order]
+verify_jwt = false
+
+[functions.setup-sales-agent]
+verify_jwt = false

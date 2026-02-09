@@ -6,6 +6,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ELEVENLABS_AGENT_ID = "agent_4701kgtb1mdhfjkv2brwt1a1s68j";
+
+function formatPhoneNumber(phone: string): string {
+  let phoneNumber = phone.replace(/[^0-9+]/g, "");
+  if (!phoneNumber.startsWith("+")) {
+    if (phoneNumber.startsWith("1") && phoneNumber.length === 11) {
+      phoneNumber = "+" + phoneNumber;
+    } else {
+      phoneNumber = "+1" + phoneNumber;
+    }
+  }
+  return phoneNumber;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,7 +33,7 @@ Deno.serve(async (req) => {
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // --- Twilio status callback ---
+  // --- Twilio status callback (still works with ElevenLabs native integration) ---
   if (action === "status") {
     try {
       const formData = await req.formData();
@@ -48,7 +62,6 @@ Deno.serve(async (req) => {
           })
           .eq("id", leadId);
 
-        // Also save to call_records
         await supabase.from("call_records").insert({
           direction: "outbound",
           caller_phone: from || null,
@@ -96,7 +109,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // --- Initiate outbound call to a lead ---
+  // --- Initiate outbound call via ElevenLabs native Twilio integration ---
   if (action === "call") {
     try {
       if (!leadId) {
@@ -126,67 +139,45 @@ Deno.serve(async (req) => {
         );
       }
 
-      const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-      const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-      const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
       const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-      const ELEVENLABS_AGENT_ID = "agent_4701kgtb1mdhfjkv2brwt1a1s68j";
+      const ELEVENLABS_PHONE_NUMBER_ID = Deno.env.get("ELEVENLABS_PHONE_NUMBER_ID");
 
-      if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-        throw new Error("Twilio credentials not configured");
+      if (!ELEVENLABS_API_KEY || !ELEVENLABS_PHONE_NUMBER_ID) {
+        throw new Error("ElevenLabs credentials not configured");
       }
 
-      // Use scripted TwiML for outbound calls
-      // Note: ElevenLabs conversational AI uses a different WebSocket protocol than Twilio Media Streams,
-      // so direct streaming isn't compatible. Use polished scripted message instead.
-      const functionUrl = `${supabaseUrl}/functions/v1/outbound-sales-call`;
-      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Matthew" language="en-US">
-    Hi, this is a call from Business Internet Express for ${lead.business_name}.
-    Great news! High-speed fiber internet is now available in ${lead.city || "your area"}.
-    You can get speeds up to 30 gigabits per second starting at just $49.99 per month, 
-    with free installation and no data caps.
-    To learn more or place an order, visit businessinternetexpress.com or call us at 1-888-230-FAST.
-    That's 1-888-230-3278. Thank you and have a great day!
-  </Say>
-</Response>`;
+      const phoneNumber = formatPhoneNumber(lead.phone);
 
-      // Format phone number
-      let phoneNumber = lead.phone.replace(/[^0-9+]/g, "");
-      if (!phoneNumber.startsWith("+")) {
-        if (phoneNumber.startsWith("1") && phoneNumber.length === 11) {
-          phoneNumber = "+" + phoneNumber;
-        } else {
-          phoneNumber = "+1" + phoneNumber;
+      // Use ElevenLabs native Twilio outbound call API
+      const elResponse = await fetch(
+        "https://api.elevenlabs.io/v1/convai/twilio/outbound-call",
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_id: ELEVENLABS_AGENT_ID,
+            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
+            to_number: phoneNumber,
+            conversation_initiation_client_data: {
+              dynamic_variables: {
+                lead_id: leadId,
+                business_name: lead.business_name,
+                city: lead.city || "your area",
+                state: lead.state || "",
+              },
+            },
+          }),
         }
-      }
+      );
 
-      // Initiate the Twilio call
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
-      const callParams = new URLSearchParams({
-        To: phoneNumber,
-        From: TWILIO_PHONE_NUMBER,
-        Twiml: twiml,
-        StatusCallback: `${functionUrl}?action=status&lead_id=${leadId}`,
-        StatusCallbackEvent: "completed",
-        Record: "true",
-        RecordingStatusCallback: `${functionUrl}?action=recording&lead_id=${leadId}`,
-      });
+      const elData = await elResponse.json();
+      console.log("ElevenLabs outbound call response:", JSON.stringify(elData));
 
-      const twilioRes = await fetch(twilioUrl, {
-        method: "POST",
-        headers: {
-          Authorization: "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: callParams.toString(),
-      });
-
-      const twilioData = await twilioRes.json();
-
-      if (!twilioRes.ok) {
-        throw new Error(`Twilio error: ${twilioData.message || JSON.stringify(twilioData)}`);
+      if (!elResponse.ok) {
+        throw new Error(`ElevenLabs error: ${elData.message || JSON.stringify(elData)}`);
       }
 
       // Update lead status
@@ -195,12 +186,16 @@ Deno.serve(async (req) => {
         .update({
           campaign_status: "called",
           last_call_at: new Date().toISOString(),
-          call_sid: twilioData.sid,
+          call_sid: elData.callSid || null,
         })
         .eq("id", leadId);
 
       return new Response(
-        JSON.stringify({ success: true, callSid: twilioData.sid }),
+        JSON.stringify({
+          success: true,
+          callSid: elData.callSid,
+          conversationId: elData.conversation_id,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (error) {
