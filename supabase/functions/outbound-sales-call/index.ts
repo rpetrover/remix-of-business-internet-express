@@ -136,51 +136,21 @@ Deno.serve(async (req) => {
         throw new Error("Twilio credentials not configured");
       }
 
-      // Get ElevenLabs signed URL for the call
-      let signedUrl = "";
-      if (ELEVENLABS_API_KEY) {
-        try {
-          const elRes = await fetch(
-            `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
-            { headers: { "xi-api-key": ELEVENLABS_API_KEY } }
-          );
-          const elData = await elRes.json();
-          signedUrl = elData.signed_url || "";
-        } catch (e) {
-          console.error("ElevenLabs signed URL error:", e);
-        }
-      }
-
-      // Build TwiML - use ElevenLabs AI agent if available, otherwise use scripted message
+      // Use scripted TwiML for outbound calls
+      // Note: ElevenLabs conversational AI uses a different WebSocket protocol than Twilio Media Streams,
+      // so direct streaming isn't compatible. Use polished scripted message instead.
       const functionUrl = `${supabaseUrl}/functions/v1/outbound-sales-call`;
-      let twiml: string;
-
-      if (signedUrl) {
-        // Connect to ElevenLabs conversational AI agent
-        twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Connect>
-    <Stream url="${signedUrl}">
-      <Parameter name="lead_id" value="${leadId}" />
-      <Parameter name="business_name" value="${lead.business_name}" />
-      <Parameter name="city" value="${lead.city || ""}" />
-    </Stream>
-  </Connect>
-</Response>`;
-      } else {
-        // Fallback: scripted message
-        twiml = `<?xml version="1.0" encoding="UTF-8"?>
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Matthew" language="en-US">
-    Hi, this is Business Internet Express calling for ${lead.business_name}.
-    Great news! Fiber internet is now available in ${lead.city || "your area"}.
-    You can now get speeds up to 30 gigabits per second starting at just $49.99 per month, 
+    Hi, this is a call from Business Internet Express for ${lead.business_name}.
+    Great news! High-speed fiber internet is now available in ${lead.city || "your area"}.
+    You can get speeds up to 30 gigabits per second starting at just $49.99 per month, 
     with free installation and no data caps.
     To learn more or place an order, visit businessinternetexpress.com or call us at 1-888-230-FAST.
     That's 1-888-230-3278. Thank you and have a great day!
   </Say>
 </Response>`;
-      }
 
       // Format phone number
       let phoneNumber = lead.phone.replace(/[^0-9+]/g, "");
