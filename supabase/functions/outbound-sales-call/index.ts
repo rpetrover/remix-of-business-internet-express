@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
       console.log(`Selected opening variant: ${openingVariant} for lead ${leadId}`);
 
       // Use ElevenLabs native Twilio outbound call API
+      // Connect buffer: 1.0s pause before agent audio to avoid talking over callee's "hello"
       const elResponse = await fetch(
         "https://api.elevenlabs.io/v1/convai/twilio/outbound-call",
         {
@@ -166,6 +167,7 @@ Deno.serve(async (req) => {
             agent_id: ELEVENLABS_AGENT_ID,
             agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
             to_number: phoneNumber,
+            first_message: "", // Empty first message = agent starts in listening mode
             conversation_initiation_client_data: {
               dynamic_variables: {
                 lead_id: leadId,
@@ -173,6 +175,7 @@ Deno.serve(async (req) => {
                 city: lead.city || "your area",
                 state: lead.state || "",
                 opening_variant: openingVariant,
+                connect_buffer_ms: "1000",
               },
             },
           }),

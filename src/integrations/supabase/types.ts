@@ -157,12 +157,19 @@ export type Database = {
           customer_name: string | null
           direction: string
           duration_seconds: number | null
+          first_user_utterance_detected: boolean | null
           id: string
+          interruptions_count: number | null
+          no_input_reprompt_used: boolean | null
+          no_response_end: boolean | null
           recording_url: string | null
           related_checkout_id: string | null
           related_order_id: string | null
+          started_speaking_before_user: boolean | null
           status: string
           summary: string | null
+          time_to_first_agent_speech_ms: number | null
+          time_to_first_user_speech_ms: number | null
           transcript: string | null
           updated_at: string
         }
@@ -176,12 +183,19 @@ export type Database = {
           customer_name?: string | null
           direction?: string
           duration_seconds?: number | null
+          first_user_utterance_detected?: boolean | null
           id?: string
+          interruptions_count?: number | null
+          no_input_reprompt_used?: boolean | null
+          no_response_end?: boolean | null
           recording_url?: string | null
           related_checkout_id?: string | null
           related_order_id?: string | null
+          started_speaking_before_user?: boolean | null
           status?: string
           summary?: string | null
+          time_to_first_agent_speech_ms?: number | null
+          time_to_first_user_speech_ms?: number | null
           transcript?: string | null
           updated_at?: string
         }
@@ -195,12 +209,19 @@ export type Database = {
           customer_name?: string | null
           direction?: string
           duration_seconds?: number | null
+          first_user_utterance_detected?: boolean | null
           id?: string
+          interruptions_count?: number | null
+          no_input_reprompt_used?: boolean | null
+          no_response_end?: boolean | null
           recording_url?: string | null
           related_checkout_id?: string | null
           related_order_id?: string | null
+          started_speaking_before_user?: boolean | null
           status?: string
           summary?: string | null
+          time_to_first_agent_speech_ms?: number | null
+          time_to_first_user_speech_ms?: number | null
           transcript?: string | null
           updated_at?: string
         }

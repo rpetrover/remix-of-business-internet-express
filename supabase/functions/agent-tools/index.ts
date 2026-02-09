@@ -95,6 +95,49 @@ Deno.serve(async (req) => {
         responseMessage = "DNC request logged. Lead removed from calling list.";
         break;
 
+      case "log_turn_taking_metrics": {
+        // Log turn-taking & behavior metrics to call_records
+        const metricsData: Record<string, any> = {};
+        if (parameters.started_speaking_before_user !== undefined)
+          metricsData.started_speaking_before_user = parameters.started_speaking_before_user;
+        if (parameters.interruptions_count !== undefined)
+          metricsData.interruptions_count = parameters.interruptions_count;
+        if (parameters.no_input_reprompt_used !== undefined)
+          metricsData.no_input_reprompt_used = parameters.no_input_reprompt_used;
+        if (parameters.no_response_end !== undefined)
+          metricsData.no_response_end = parameters.no_response_end;
+        if (parameters.first_user_utterance_detected !== undefined)
+          metricsData.first_user_utterance_detected = parameters.first_user_utterance_detected;
+        if (parameters.time_to_first_agent_speech_ms !== undefined)
+          metricsData.time_to_first_agent_speech_ms = parameters.time_to_first_agent_speech_ms;
+        if (parameters.time_to_first_user_speech_ms !== undefined)
+          metricsData.time_to_first_user_speech_ms = parameters.time_to_first_user_speech_ms;
+
+        // Update call_records by lead's most recent call
+        const { data: latestCall } = await supabase
+          .from("call_records")
+          .select("id")
+          .eq("customer_name", parameters.business_name || "")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestCall) {
+          await supabase
+            .from("call_records")
+            .update(metricsData)
+            .eq("id", latestCall.id);
+        }
+
+        // Also log no_response_end as outcome on the lead
+        if (parameters.no_response_end) {
+          updateData = { call_outcome: "no_response", campaign_status: "called" };
+        }
+
+        responseMessage = "Turn-taking metrics logged.";
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown tool: ${tool_name}` }),
