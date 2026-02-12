@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
       }
 
       const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-      const ELEVENLABS_PHONE_NUMBER_ID = Deno.env.get("ELEVENLABS_PHONE_NUMBER_ID");
+      const ELEVENLABS_PHONE_NUMBER_ID = Deno.env.get("ELEVENLABS_OUTBOUND_PHONE_NUMBER_ID");
 
       if (!ELEVENLABS_API_KEY || !ELEVENLABS_PHONE_NUMBER_ID) {
         throw new Error("ElevenLabs credentials not configured");
