@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       .from("outbound_leads")
       .select("*")
       .not("phone", "is", null)
-      .not("campaign_status", "in", '("converted","not_interested","do_not_contact")')
+      .not("campaign_status", "in", '("converted","not_interested","do_not_contact","called")')
       .or("last_call_at.is.null,last_call_at.lt." + new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString())
       .order("is_fiber_launch_area", { ascending: false, nullsFirst: false })
       .order("last_call_at", { ascending: true, nullsFirst: true })
@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
       try {
         const phoneNumber = formatPhoneNumber(lead.phone);
 
+        // Randomly select opening variant A–E
+        const variants = ["A", "B", "C", "D", "E"];
+        const openingVariant = variants[Math.floor(Math.random() * variants.length)];
+
         // Use ElevenLabs native Twilio outbound call API
         const elResponse = await fetch(
           "https://api.elevenlabs.io/v1/convai/twilio/outbound-call",
@@ -128,12 +132,15 @@ Deno.serve(async (req) => {
               agent_id: ELEVENLABS_AGENT_ID,
               agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
               to_number: phoneNumber,
+              first_message: "", // Empty = agent starts in listening mode, waits for "hello"
               conversation_initiation_client_data: {
                 dynamic_variables: {
                   lead_id: lead.id,
                   business_name: lead.business_name,
                   city: lead.city || "your area",
                   state: lead.state || "",
+                  opening_variant: openingVariant,
+                  connect_buffer_ms: "1000",
                 },
               },
             }),
@@ -155,6 +162,7 @@ Deno.serve(async (req) => {
             campaign_status: "called",
             last_call_at: new Date().toISOString(),
             call_sid: elData.callSid || null,
+            opening_variant: openingVariant,
           })
           .eq("id", lead.id);
 
