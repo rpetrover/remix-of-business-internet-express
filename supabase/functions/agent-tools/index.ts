@@ -30,7 +30,6 @@ Deno.serve(async (req) => {
     }
 
     let updateData: Record<string, any> = {};
-    let responseMessage = "";
 
     switch (tool_name) {
       case "log_gatekeeper":
@@ -40,7 +39,6 @@ Deno.serve(async (req) => {
             ? `Gatekeeper: ${parameters.notes}`
             : "Gatekeeper encountered",
         };
-        responseMessage = "Gatekeeper encounter logged.";
         break;
 
       case "log_decision_maker":
@@ -49,7 +47,6 @@ Deno.serve(async (req) => {
           decision_maker_name: parameters.name || null,
           decision_maker_title: parameters.title || null,
         };
-        responseMessage = "Decision maker info logged.";
         break;
 
       case "log_objection":
@@ -65,7 +62,6 @@ Deno.serve(async (req) => {
         updateData = {
           objections_triggered: [...currentObjections, newObjection],
         };
-        responseMessage = `Objection "${newObjection}" logged.`;
         break;
 
       case "log_callback":
@@ -74,7 +70,6 @@ Deno.serve(async (req) => {
           campaign_status: "callback",
           call_outcome: "callback_requested",
         };
-        responseMessage = "Callback request logged.";
         break;
 
       case "log_outcome":
@@ -83,7 +78,6 @@ Deno.serve(async (req) => {
           campaign_status: parameters.outcome === "interested" ? "qualified" : "called",
           qualifying_answers: parameters.qualifying_answers || null,
         };
-        responseMessage = `Call outcome "${parameters.outcome}" logged.`;
         break;
 
       case "log_dnc":
@@ -92,7 +86,6 @@ Deno.serve(async (req) => {
           call_outcome: "dnc",
           notes: "Do-Not-Call request honored",
         };
-        responseMessage = "DNC request logged. Lead removed from calling list.";
         break;
 
       case "log_zip_confirmation": {
@@ -117,11 +110,6 @@ Deno.serve(async (req) => {
         if (!confirmed && retryCount >= 2) {
           updateData.campaign_status = "callback";
           updateData.call_outcome = "zip_unresolved";
-          responseMessage = "ZIP unresolved after 2 retries. Callback scheduled.";
-        } else {
-          responseMessage = confirmed
-            ? `ZIP ${parsed} confirmed.`
-            : `ZIP attempt logged (retry ${retryCount}).`;
         }
         break;
       }
@@ -136,7 +124,6 @@ Deno.serve(async (req) => {
         else if (component === "state") updateData.address_state_collected = value;
 
         updateData.address_collection_step = step;
-        responseMessage = `Address component "${component}" logged: ${value}`;
         break;
       }
 
@@ -178,8 +165,6 @@ Deno.serve(async (req) => {
         if (parameters.no_response_end) {
           updateData = { call_outcome: "no_response", campaign_status: "called" };
         }
-
-        responseMessage = "Turn-taking metrics logged.";
         break;
       }
 
@@ -203,10 +188,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`${tool_name} logged for lead ${leadId}`);
+    console.log(`${tool_name} ok for lead ${leadId}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: responseMessage }),
+      JSON.stringify({ status: "ok" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
