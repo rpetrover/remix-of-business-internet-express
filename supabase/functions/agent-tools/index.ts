@@ -95,6 +95,51 @@ Deno.serve(async (req) => {
         responseMessage = "DNC request logged. Lead removed from calling list.";
         break;
 
+      case "log_zip_confirmation": {
+        const rawInput = parameters.zip_raw_input || "";
+        const parsed = parameters.zip_parsed || "";
+        const confirmed = parameters.zip_confirmed === true;
+        const retryCount = typeof parameters.zip_retry_count === "number" ? parameters.zip_retry_count : 0;
+
+        updateData = {
+          zip_raw_input: rawInput,
+          zip_parsed: parsed,
+          zip_confirmed: confirmed,
+          zip_retry_count: retryCount,
+        };
+
+        // If confirmed and valid 5-digit ZIP, also update the main zip field
+        if (confirmed && /^\d{5}$/.test(parsed)) {
+          updateData.zip = parsed;
+        }
+
+        // If failed after 2 retries, schedule callback
+        if (!confirmed && retryCount >= 2) {
+          updateData.campaign_status = "callback";
+          updateData.call_outcome = "zip_unresolved";
+          responseMessage = "ZIP unresolved after 2 retries. Callback scheduled.";
+        } else {
+          responseMessage = confirmed
+            ? `ZIP ${parsed} confirmed.`
+            : `ZIP attempt logged (retry ${retryCount}).`;
+        }
+        break;
+      }
+
+      case "log_address_component": {
+        const component = parameters.component || ""; // street, city, state, zip
+        const value = parameters.value || "";
+        const step = parameters.step || "not_started";
+
+        if (component === "street") updateData.address_street = value;
+        else if (component === "city") updateData.address_city_collected = value;
+        else if (component === "state") updateData.address_state_collected = value;
+
+        updateData.address_collection_step = step;
+        responseMessage = `Address component "${component}" logged: ${value}`;
+        break;
+      }
+
       case "log_turn_taking_metrics": {
         // Log turn-taking & behavior metrics to call_records
         const metricsData: Record<string, any> = {};
