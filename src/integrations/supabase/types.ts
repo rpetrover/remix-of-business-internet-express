@@ -983,6 +983,10 @@ export type Database = {
       outbound_leads: {
         Row: {
           address: string | null
+          address_city_collected: string | null
+          address_collection_step: string | null
+          address_state_collected: string | null
+          address_street: string | null
           business_name: string
           business_type: string | null
           call_outcome: string | null
@@ -1020,9 +1024,17 @@ export type Database = {
           updated_at: string
           website: string | null
           zip: string | null
+          zip_confirmed: boolean | null
+          zip_parsed: string | null
+          zip_raw_input: string | null
+          zip_retry_count: number | null
         }
         Insert: {
           address?: string | null
+          address_city_collected?: string | null
+          address_collection_step?: string | null
+          address_state_collected?: string | null
+          address_street?: string | null
           business_name: string
           business_type?: string | null
           call_outcome?: string | null
@@ -1060,9 +1072,17 @@ export type Database = {
           updated_at?: string
           website?: string | null
           zip?: string | null
+          zip_confirmed?: boolean | null
+          zip_parsed?: string | null
+          zip_raw_input?: string | null
+          zip_retry_count?: number | null
         }
         Update: {
           address?: string | null
+          address_city_collected?: string | null
+          address_collection_step?: string | null
+          address_state_collected?: string | null
+          address_street?: string | null
           business_name?: string
           business_type?: string | null
           call_outcome?: string | null
@@ -1100,6 +1120,10 @@ export type Database = {
           updated_at?: string
           website?: string | null
           zip?: string | null
+          zip_confirmed?: boolean | null
+          zip_parsed?: string | null
+          zip_raw_input?: string | null
+          zip_retry_count?: number | null
         }
         Relationships: [
           {
