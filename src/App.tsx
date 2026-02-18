@@ -18,6 +18,7 @@ import Admin from "./pages/Admin";
 import VerifyEmail from "./pages/VerifyEmail";
 import OrderSuccess from "./pages/OrderSuccess";
 import ChatWidget from "./components/ChatWidget";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { CartProvider } from "./contexts/CartContext";
 import { captureAttribution } from "./hooks/useAttribution";
 import { trackPageView } from "./lib/analytics";
@@ -46,6 +47,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <CartProvider>
+          <ScrollToTop />
           <RouteTracker />
           <Routes>
             <Route path="/" element={<Index />} />
