@@ -377,6 +377,54 @@ const AdminOrders = () => {
                 </div>
               </div>
 
+              {/* Business Details parsed from notes */}
+              {(() => {
+                const notes = selectedOrder.notes || '';
+                const businessMatch = notes.match(/Business:\s*([^|]+)/);
+                const industryMatch = notes.match(/Industry:\s*([^|]+)/);
+                const taxIdMatch = notes.match(/Tax ID:\s*([^|]+)/);
+                const liquorMatch = notes.match(/Liquor License:\s*Yes(?:,\s*Occupancy:\s*(\d+))?/);
+                const businessName = businessMatch?.[1]?.trim();
+                const industry = industryMatch?.[1]?.trim();
+                const taxId = taxIdMatch?.[1]?.trim();
+                const hasLiquor = !!liquorMatch;
+                const occupancy = liquorMatch?.[1];
+
+                if (!businessName && !industry && !taxId && !hasLiquor) return null;
+
+                return (
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <h4 className="text-sm font-semibold">Business Details</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {businessName && (
+                        <div>
+                          <span className="text-muted-foreground">Business Name:</span>{' '}
+                          <span className="font-medium">{businessName}</span>
+                        </div>
+                      )}
+                      {industry && (
+                        <div>
+                          <span className="text-muted-foreground">Industry:</span>{' '}
+                          <span>{industry}</span>
+                        </div>
+                      )}
+                      {taxId && (
+                        <div>
+                          <span className="text-muted-foreground">Tax ID (EIN):</span>{' '}
+                          <span>{taxId}</span>
+                        </div>
+                      )}
+                      {hasLiquor && (
+                        <div>
+                          <span className="text-muted-foreground">Liquor License:</span>{' '}
+                          <span className="font-medium text-amber-600">Yes{occupancy ? ` — Occupancy: ${occupancy}` : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Service Details */}
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
                 <h4 className="text-sm font-semibold">Service Details</h4>

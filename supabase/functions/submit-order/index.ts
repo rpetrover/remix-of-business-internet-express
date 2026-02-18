@@ -286,9 +286,24 @@ function formatAdminNotificationHtml(order: OrderData, orderId: string): string 
           </tr>
           ${order.business_name ? `
           <tr>
-            <td style="padding: 6px 0; color: #6b7280;"><strong>Business:</strong></td>
-            <td style="padding: 6px 0; color: #333;">${order.business_name}</td>
+            <td style="padding: 6px 0; color: #6b7280;"><strong>Business Name:</strong></td>
+            <td style="padding: 6px 0; color: #333; font-weight: bold;">${order.business_name}</td>
           </tr>` : ""}
+          ${(() => {
+            const notes = order.notes || '';
+            const industryMatch = notes.match(/Industry:\s*([^|]+)/);
+            const taxIdMatch = notes.match(/Tax ID:\s*([^|]+)/);
+            const liquorMatch = notes.match(/Liquor License:\s*Yes(?:,\s*Occupancy:\s*(\d+))?/);
+            const industry = industryMatch?.[1]?.trim();
+            const taxId = taxIdMatch?.[1]?.trim();
+            const hasLiquor = !!liquorMatch;
+            const occupancy = liquorMatch?.[1];
+            let extra = '';
+            if (industry) extra += `<tr><td style="padding: 6px 0; color: #6b7280;"><strong>Industry:</strong></td><td style="padding: 6px 0; color: #333;">${industry}</td></tr>`;
+            if (taxId) extra += `<tr><td style="padding: 6px 0; color: #6b7280;"><strong>Tax ID (EIN):</strong></td><td style="padding: 6px 0; color: #333;">${taxId}</td></tr>`;
+            if (hasLiquor) extra += `<tr><td style="padding: 6px 0; color: #6b7280;"><strong>Liquor License:</strong></td><td style="padding: 6px 0; color: #c05621; font-weight: bold;">Yes${occupancy ? ` — Licensed Occupancy: ${occupancy}` : ''}</td></tr>`;
+            return extra;
+          })()}
           <tr>
             <td style="padding: 6px 0; color: #6b7280;"><strong>Email:</strong></td>
             <td style="padding: 6px 0; color: #333;"><a href="mailto:${order.contact_email}">${order.contact_email}</a></td>

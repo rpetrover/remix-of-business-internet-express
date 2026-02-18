@@ -221,6 +221,14 @@ const OrderCompletion = () => {
         preferredAreaCode: hasPhoneProduct && formData.phoneNumberType === 'new' ? formData.preferredAreaCode : undefined,
       });
       
+      // Validate licensedOccupancy when liquor license is checked
+      if (formData.hasLiquorLicense && !formData.licensedOccupancy) {
+        const occErrors: Record<string, string> = {};
+        occErrors.licensedOccupancy = 'Licensed occupancy is required when a liquor license is indicated';
+        setErrors(prev => ({ ...prev, ...occErrors }));
+        return false;
+      }
+
       // Additional validation for phone fields
       if (hasPhoneProduct) {
         if (formData.phoneNumberType === 'transfer' && !formData.existingNumber) {
@@ -721,7 +729,7 @@ const OrderCompletion = () => {
 
                     {formData.hasLiquorLicense && (
                       <div className="ml-7">
-                        <Label htmlFor="licensedOccupancy">Licensed Occupancy</Label>
+                        <Label htmlFor="licensedOccupancy">Licensed Occupancy *</Label>
                         <Input
                           id="licensedOccupancy"
                           value={formData.licensedOccupancy}
