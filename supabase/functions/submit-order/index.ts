@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { autoSubmitToIntelisys } from "../_shared/intelisys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -396,9 +397,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Intelisys email is no longer sent automatically.
-    // Admins submit to Intelisys manually from the admin panel using their local email client.
-    // Admins submit to Intelisys manually from the admin panel using their local email client.
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
     // Store the order in the database
@@ -431,7 +429,8 @@ serve(async (req) => {
 
     const orderId = orderRecord?.id || "";
 
-    // (Intelisys email log removed — admin submits manually now)
+    // AUTOMATIC INTELISYS SEND (non-Spectrum only; no Stripe step for these orders)
+    if (orderRecord) await autoSubmitToIntelisys(supabase, orderRecord);
 
     // Send detailed customer confirmation email
     const customerHtml = formatCustomerConfirmationHtml(orderData, orderId);
