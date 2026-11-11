@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "npm:resend@2.0.0";
+import { autoSubmitToIntelisys } from "../_shared/intelisys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -106,6 +107,23 @@ serve(async (req) => {
     }
 
     const orderId = orderRecord?.id || "";
+
+    // AUTOMATIC INTELISYS SEND (non-Spectrum only, after Stripe payment verified as paid).
+    // If this session was verified more than once (e.g. page refresh), only the earliest order row may send.
+    if (orderRecord) {
+      const { data: firstForSession } = await supabase
+        .from("orders")
+        .select("id")
+        .ilike("notes", `%Stripe Session: ${session_id}%`)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (!firstForSession || firstForSession.id === orderRecord.id) {
+        await autoSubmitToIntelisys(supabase, orderRecord);
+      } else {
+        console.log(`[intelisys] Session ${session_id} already has order ${firstForSession.id} — skipping duplicate.`);
+      }
+    }
 
     // Send emails
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
