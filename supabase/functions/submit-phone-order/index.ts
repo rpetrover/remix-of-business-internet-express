@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { autoSubmitToIntelisys } from "../_shared/intelisys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -309,6 +310,7 @@ Deno.serve(async (req) => {
     }
 
     console.log("Order created:", order.id);
+    await autoSubmitToIntelisys(supabase, order);
 
     if (lead_id) {
       await supabase

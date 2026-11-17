@@ -856,6 +856,7 @@ export type Database = {
           selected_plan: string | null
           service_address: string
           service_type: string
+          spectrum_notified_at: string | null
           speed: string | null
           state: string
           status: string
@@ -891,6 +892,7 @@ export type Database = {
           selected_plan?: string | null
           service_address: string
           service_type?: string
+          spectrum_notified_at?: string | null
           speed?: string | null
           state: string
           status?: string
@@ -926,6 +928,7 @@ export type Database = {
           selected_plan?: string | null
           service_address?: string
           service_type?: string
+          spectrum_notified_at?: string | null
           speed?: string | null
           state?: string
           status?: string

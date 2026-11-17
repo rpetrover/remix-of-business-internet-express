@@ -80,6 +80,75 @@ export function buildIntelisysEmail(order: IntelisysOrder): { subject: string; b
 }
 
 /**
+ * Emails Rich and Ben about a Spectrum order so they can enter it in Spectrum Buyflow.
+ * Never throws. Atomically claims spectrum_notified_at so it can only go once.
+ */
+export async function notifySpectrumOrder(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  order: IntelisysOrder & { channel?: string | null; status?: string | null; stripe_session_id?: string | null },
+): Promise<void> {
+  try {
+    if (!order?.id) return;
+    const { data: claimed, error: claimErr } = await supabase
+      .from("orders")
+      .update({ spectrum_notified_at: new Date().toISOString() })
+      .eq("id", order.id)
+      .is("spectrum_notified_at", null)
+      .select("id");
+    if (claimErr || !claimed || claimed.length === 0) {
+      console.log(`[spectrum] Order ${order.id} already notified/claimed — skipping.`, claimErr ?? "");
+      return;
+    }
+    const v = (x: unknown) => (x === null || x === undefined || x === "" ? "—" : String(x));
+    const lines = [
+      "New Spectrum order — enter it manually in Spectrum Buyflow: https://retailportal.spectrum.com",
+      "",
+      `Order ID: ${v(order.id)}`,
+      `Channel: ${v(order.channel)}`,
+      `Status: ${v(order.status)}`,
+      `Customer Name: ${v(order.customer_name)}`,
+      `Service Address: ${v(order.service_address)}`,
+      `City/State/ZIP: ${v(order.city)}, ${v(order.state)} ${v(order.zip)}`,
+      `Country: ${v(order.country)}`,
+      `Contact Phone: ${v(order.contact_phone)}`,
+      `Contact Email: ${v(order.contact_email)}`,
+      `Service Type: ${v(order.service_type)}`,
+      `Provider: ${v(order.preferred_provider)}`,
+      `Selected Plan: ${v(order.selected_plan)}`,
+      `Speed: ${v(order.speed)}`,
+      `Monthly Price: ${order.monthly_price ? `$${order.monthly_price}/month` : "—"}`,
+      `Notes: ${v(order.notes)}`,
+    ];
+    if (order.stripe_session_id) lines.push(`Stripe Session ID: ${order.stripe_session_id}`);
+    lines.push("", "Admin panel: https://www.businessinternetexpress.com/admin");
+
+    const email = (order.contact_email || "").trim();
+    const realEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+      !email.toLowerCase().endsWith("@businessinternetexpress.com");
+    try {
+      const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+      const res = await resend.emails.send({
+        from: "Business Internet Express <service@businessinternetexpress.com>",
+        to: ["rich@scotchtowntechnology.com", "ben.quimpo@scotchtown.tech"],
+        cc: ["service@businessinternetexpress.com"],
+        ...(realEmail ? { reply_to: email } : {}),
+        subject: `[BIE] New Spectrum order – enter in Buyflow – ${order.customer_name}`,
+        text: lines.join("\n"),
+      });
+      // deno-lint-ignore no-explicit-any
+      if ((res as any)?.error) throw new Error(JSON.stringify((res as any).error));
+      console.log(`[spectrum] Order ${order.id} emailed to Rich and Ben.`, res);
+    } catch (sendErr) {
+      console.error(`[spectrum] Send failed for order ${order.id}:`, sendErr);
+      await supabase.from("orders").update({ spectrum_notified_at: null }).eq("id", order.id);
+    }
+  } catch (err) {
+    console.error("[spectrum] Unexpected error:", err);
+  }
+}
+
+/**
  * Sends the order to Intelisys once. Never throws — failures are logged and the flag stays false.
  * Atomically claims the order (intelisys_email_sent false -> true) before sending so it can never go twice.
  */
@@ -88,7 +157,8 @@ export async function autoSubmitToIntelisys(supabase: any, order: IntelisysOrder
   try {
     if (!order?.id) return;
     if (isSpectrumOrder(order)) {
-      console.log(`[intelisys] Order ${order.id} is Spectrum — skipping (manual Buyflow).`);
+      console.log(`[intelisys] Order ${order.id} is Spectrum — notifying team for manual Buyflow.`);
+      await notifySpectrumOrder(supabase, order);
       return;
     }
     if (order.intelisys_email_sent) return;

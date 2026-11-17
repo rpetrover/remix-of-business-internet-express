@@ -43,6 +43,7 @@ interface Order {
   channel: string;
   intelisys_email_sent: boolean;
   intelisys_sent_at: string | null;
+  spectrum_notified_at?: string | null;
   notes: string | null;
   porting_bill_url: string | null;
   created_at: string;
@@ -507,6 +508,11 @@ const AdminOrders = () => {
                     <Badge className="bg-emerald-500/10 text-emerald-600">✓ Submitted</Badge>
                   ) : (
                     <Badge className="bg-amber-500/10 text-amber-600">Not Submitted</Badge>
+                  )}
+                  {selectedOrder.spectrum_notified_at && (
+                    <Badge variant="outline" className="text-xs">
+                      Spectrum emailed {new Date(selectedOrder.spectrum_notified_at).toLocaleString()}
+                    </Badge>
                   )}
                   <Button
                     size="sm"
